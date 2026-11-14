@@ -2,10 +2,10 @@ import {
   API, FORM_KO, GIMMICKS, PRIMAL_ORB, REGIONS, REGION_FORM_KO, REGION_KO, TIME_KO, TOTAL, TYPES,
 } from '../lib/constants';
 import { nameOf, store } from '../lib/store';
-import { getJSON, gimmickKind, idFromUrl, latestText, regionOf, withRo } from '../lib/utils';
+import { art, getJSON, gimmickKind, idFromUrl, latestText, regionOf, withRo } from '../lib/utils';
 import type {
   AbilityInfo, ApiAbility, ApiChainLink, ApiEvolutionChain, ApiEvolutionDetail, ApiForm, ApiItemCategory, ApiPokemon,
-  ApiSpecies, Detail, FormCardData, GimmickKind, LocalizedName, NamedResource, Stat,
+  ApiSpecies, Detail, FormCardData, GenderArt, GimmickKind, LocalizedName, NamedResource, Stat,
 } from '../types';
 import { loadMachines, loadMoveData } from './moves';
 import { itemKo, koName } from './names';
@@ -163,6 +163,24 @@ async function loadRegional(ref: NamedResource, baseKo: string): Promise<FormCar
   };
 }
 
+/* ---------- 암수 모습 ---------- */
+
+// 냐오닉스·에브리즈 등은 암컷이 따로 된 포켓몬이라 공식 일러스트가 있고,
+// 나머지는 공식 일러스트에 암컷 그림이 없어서 둘 다 HOME 그림으로 맞춘다
+function genderArtOf(pk: ApiPokemon, id: number, varieties: NamedResource[]): GenderArt | null {
+  const femaleRef = varieties.find((v) => v.name.endsWith('-female'));
+  if (femaleRef) {
+    const fid = idFromUrl(femaleRef.url);
+    return { male: [art(id), art(id, true)], female: [art(fid), art(fid, true)] };
+  }
+  const home = pk.sprites.other?.home;
+  if (!home?.front_female || !home.front_default) return null;
+  return {
+    male: [home.front_default, home.front_shiny || home.front_default],
+    female: [home.front_female, home.front_shiny_female || home.front_female],
+  };
+}
+
 /* ---------- 상세 정보 ---------- */
 
 interface EvoMethod {
@@ -256,6 +274,7 @@ async function fetchDetail(id: number): Promise<Detail> {
     height: pk.height / 10,
     weight: pk.weight / 10,
     genderRate: sp.gender_rate,
+    genderArt: genderArtOf(pk, id, varieties),
     flavor: latestText(sp.flavor_text_entries),
     stats: statsOf(pk),
     abilities,

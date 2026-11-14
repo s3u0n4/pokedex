@@ -83,7 +83,7 @@ export default function DetailModal({ id, prevId, nextId, onGo, onClose, scrollR
             {p.genus && <div className="d-genus">{p.genus}</div>}
             <TypeBadges types={p.types} />
           </div>
-          {ready && <DetailBody key={id} id={id} d={ready.d} onGo={onGo} />}
+          {ready && <DetailBody key={id} id={id} d={ready.d} shiny={shiny} onGo={onGo} />}
           {failed && (
             <div className="status">
               <p>정보를 불러오지 못했어요.</p>

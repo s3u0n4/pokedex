@@ -8,6 +8,8 @@
   --text: #1b1b1f;
   --muted: #6d6d76;
   --line: #e2dfda;
+  --male: #3b82f6;
+  --female: #ec4899;
   --shadow: 0 1px 3px rgba(0,0,0,.06), 0 6px 20px rgba(0,0,0,.06);
   --shadow-hover: 0 14px 30px rgba(0,0,0,.14);
   --watermark-filter: none;
@@ -304,6 +306,12 @@ footer a { color: inherit; }
 .info > div { padding: 10px 8px; border-radius: 14px; background: var(--surface-2); text-align: center; }
 .info span { display: block; font-size: 12px; color: var(--muted); }
 .info b { font-size: 15px; }
+.genders { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.gender { margin: 0; padding: 14px 10px 10px; border-radius: 16px; background: var(--surface-2); text-align: center; }
+.gender img { width: min(180px, 100%); aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.15)); }
+.gender figcaption { font-size: 14px; font-weight: 700; }
+.gender.male b { color: var(--male); }
+.gender.female b { color: var(--female); }
 .d-section h3 { display: flex; align-items: center; gap: 8px; margin: 26px 0 10px; font-size: 16px; }
 .d-section h3 .pokeball { --s: 18px; }
 .ability { padding: 10px 14px; border-radius: 14px; background: var(--surface-2); margin-top: 8px; }

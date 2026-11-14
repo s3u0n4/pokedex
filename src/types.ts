@@ -74,11 +74,19 @@ export interface PokemonMove {
   learn: LearnEntry[];
 }
 
+/** 암수 모습이 다른 포켓몬의 그림 (일반·이로치) */
+export interface GenderArt {
+  male: [string, string];
+  female: [string, string];
+}
+
 /** 상세 화면에 필요한 정보 전부 (getDetail) */
 export interface Detail {
   height: number;
   weight: number;
   genderRate: number;
+  /** 암수 모습이 다를 때만 있다 */
+  genderArt: GenderArt | null;
   flavor: string;
   stats: Stat[];
   abilities: AbilityInfo[];
@@ -198,7 +206,10 @@ export interface ApiPokemon {
   forms: NamedResource[];
   sprites: {
     front_default: string | null;
-    other?: { 'official-artwork'?: { front_default: string | null } };
+    other?: {
+      'official-artwork'?: { front_default: string | null };
+      home?: { front_default: string | null; front_shiny: string | null; front_female: string | null; front_shiny_female: string | null };
+    };
   };
 }
 

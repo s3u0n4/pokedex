@@ -40,7 +40,7 @@ src/
     Header, Controls, PokemonGrid      목록 화면
     DetailModal                        상세 틀 (헤더, 이로치, 이전/다음, 로딩/에러), GoTo 타입
     DetailBody                         상세 본문 섹션 순서
-    Matchup, StatBars, Evolution, FormCards, Recommend, MoveList   상세 섹션
+    Matchup, StatBars, Evolution, FormCards, GenderForms, Recommend, MoveList   상세 섹션
     ui.tsx                             cssVars, Pokeball, TypeBadge, ClsBadge, Section, LoadingRow, Status, WeaknessBadges
 ```
 
@@ -60,6 +60,7 @@ src/
 | 메가스톤 | `item-category/mega-stones` | 이름 앞부분이 가장 길게 겹치는 돌을 매칭 |
 | 추천 기술 배치 | Smogon `data.pkmn.cc/sets/gen9.json` (약 1.1MB) | 없는 포켓몬은 `autoRecommend`로 자동 계산 |
 | 일러스트 | `PokeAPI/sprites` official-artwork (`{id}.png`, `shiny/{id}.png`) | |
+| 암수 모습 | `pokemon/{id}`의 `sprites.other.home.front_female`, 또는 `-female` 모습(냐오닉스 등) | 공식 일러스트에 암컷 그림이 없어서 둘 다 HOME 그림으로 맞춘다 |
 
 PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 
@@ -76,6 +77,7 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 
 1. 헤더: 번호, 일러스트(이로치 전환), 이름·분류·타입 (DetailModal)
 2. 도감 설명, 키·몸무게·성비
+2-1. 암수 모습: 수컷·암컷 그림 나란히 (모습이 다를 때만, 이로치 버튼을 따른다)
 3. 타입 상성: 받는 피해(4배~무효) / 자속 기술로 잘 때리는 타입
 4. 특성
 5. 종족값
@@ -126,6 +128,7 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 - 대도각참 조건의 "대장의징표"는 API가 아닌 직접 쓴 번역이다.
 - 타입 상성은 특성(부유 등)·테라스탈을 반영하지 않는다.
 - 세대 필터는 원래 포켓몬 번호 기준이다 (알로라 라이츄는 1세대).
+- PokeAPI에서 916 퍼퓨돈의 성비가 수컷 100%로 잘못 나온다 (암수 모습 섹션은 정상).
 
 ## 작업 기록
 
@@ -144,5 +147,6 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 | 11 | 타입 상성 칸 폭 넓힘, 타입 뱃지 줄바꿈 방지 |
 | 12 | React + Vite로 마이그레이션 (기능·디자인 동일, 예전 파일은 legacy/index.html) |
 | 13 | TypeScript(strict)로 마이그레이션, `types.ts`에 데이터·API 타입 정리 |
+| 14 | 암수 모습 섹션 (성별에 따라 모습이 다른 포켓몬) |
 
 새 작업을 하면 위 표에 한 줄 추가하고, 구조·규칙·한계가 바뀌면 해당 절도 고친다.
