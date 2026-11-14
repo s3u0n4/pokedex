@@ -13,7 +13,7 @@ React + Vite + TypeScript(strict)로 되어 있다. 처음에는 `index.html` �
 ## 배포
 
 - Vercel 프로젝트 `pokedex` (팀 `s3u0n4s-projects`), 주소: https://pokedex-five-chi-66.vercel.app
-- GitHub: https://github.com/s3u0n4/pokedex (비공개)
+- GitHub: https://github.com/s3u0n4/pokedex (공개, 2026-11-14 비공개에서 전환)
 - 수동 배포: `npx vercel deploy --prod --yes` (프로젝트 연결 정보는 `.vercel/`, git에는 안 올라감)
 - 2026-11-14 이전에 있던 Vercel 프로젝트 `pokemon-dex`(옛 CRA 버전)는 사용자 승인 후 삭제했다. GitHub 저장소 `pokemon-dex`는 남겨 뒀다.
 
