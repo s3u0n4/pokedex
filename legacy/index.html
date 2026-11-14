@@ -1,0 +1,1808 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>포켓몬 도감</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #e3350d;
+    --red-hi: #f04a24;
+    --band: #1c1c1f;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f5f3f0;
+    --text: #1b1b1f;
+    --muted: #6d6d76;
+    --line: #e2dfda;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 6px 20px rgba(0,0,0,.06);
+    --shadow-hover: 0 14px 30px rgba(0,0,0,.14);
+    --watermark-filter: none;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body.noscroll { overflow: hidden; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+  [hidden] { display: none !important; }
+
+  /* ---------- 몬스터볼 공통 ---------- */
+  .pokeball {
+    position: relative;
+    flex: none;
+    width: var(--s, 44px);
+    height: var(--s, 44px);
+    border-radius: 50%;
+    border: calc(var(--s, 44px) * .08) solid var(--band);
+    background: linear-gradient(var(--red) 0 45%, var(--band) 45% 55%, #fff 55%);
+  }
+  .pokeball::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 36%; height: 36%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #fff;
+    border: calc(var(--s, 44px) * .07) solid var(--band);
+  }
+  .wobble { animation: wobble 1.1s ease-in-out infinite; }
+  @keyframes wobble {
+    0%, 60%, 100% { transform: rotate(0); }
+    15% { transform: rotate(-22deg); }
+    35% { transform: rotate(18deg); }
+  }
+
+  .ball-top {
+    background:
+      radial-gradient(120% 160% at 12% -30%, rgba(255,255,255,.3), transparent 45%),
+      linear-gradient(180deg, var(--red-hi), var(--red));
+    color: #fff;
+  }
+  .ball-band { position: relative; height: 14px; background: var(--band); }
+  .ball-btn {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 70px; height: 70px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--band);
+    display: grid;
+    place-items: center;
+    z-index: 2;
+  }
+  .ball-btn::before {
+    content: '';
+    width: 70%; height: 70%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #fff 0 40%, #e9e9e9 70%);
+    box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 6px #d5d5d5;
+  }
+
+  /* ---------- 헤더 ---------- */
+  header.ball-top { padding: 26px 0 46px; }
+  .header-inner { display: flex; align-items: center; gap: 14px; }
+  .header-inner .pokeball { --s: 46px; border-color: rgba(0,0,0,.75); box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+  h1 {
+    margin: 0;
+    font-family: 'Jua', sans-serif;
+    font-weight: 400;
+    font-size: clamp(28px, 6vw, 40px);
+    line-height: 1.1;
+    text-shadow: 0 2px 0 rgba(0,0,0,.18);
+  }
+  .sub { margin: 4px 0 0; font-size: 14px; opacity: .92; }
+
+  /* ---------- 검색/필터 ---------- */
+  .spacer { height: 30px; }
+  .controls {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 12px 0 8px;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .search { position: relative; }
+  .search svg { position: absolute; left: 17px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .search input {
+    width: 100%;
+    height: 50px;
+    padding: 0 18px 0 48px;
+    border-radius: 999px;
+    border: 2px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 16px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search input:focus { border-color: var(--red); box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 20%, transparent); }
+  .chips {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 0 2px;
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 2px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .chip:hover { border-color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+  .chip.type-chip::before {
+    content: '';
+    display: inline-block;
+    width: 9px; height: 9px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--tc);
+    vertical-align: 0;
+  }
+  .chip.type-chip[aria-pressed="true"] { background: var(--tc); border-color: var(--tc); color: var(--tf, #fff); }
+  .chip.type-chip[aria-pressed="true"]::before { background: currentColor; }
+  .meta { display: flex; justify-content: space-between; align-items: center; min-height: 28px; padding-top: 6px; font-size: 13px; color: var(--muted); }
+  .link-btn { border: 0; background: none; color: var(--red); font: inherit; font-weight: 700; cursor: pointer; padding: 4px 0; }
+
+  /* ---------- 카드 ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    gap: 14px;
+    padding: 8px 0 40px;
+  }
+  @media (max-width: 440px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  }
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    padding: 12px 14px 14px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    right: -34px; top: -34px;
+    width: 130px; height: 130px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='black' stroke-width='8'%3E%3Ccircle cx='50' cy='50' r='44'/%3E%3Ccircle cx='50' cy='50' r='13'/%3E%3Cpath d='M6 50h31M63 50h31'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+    opacity: .06;
+    filter: var(--watermark-filter);
+    transition: transform .4s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+  .card:hover::before { transform: rotate(40deg); }
+  .card:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .card .num { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .region-tag { padding: 0 7px; border-radius: 999px; background: var(--rc); color: #fff; font-size: 11px; line-height: 18px; }
+  .form-card { border-color: color-mix(in srgb, var(--tc) 30%, var(--line)); }
+  .card .art {
+    align-self: stretch;
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    margin: 2px 0 6px;
+    background: radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--tc) 22%, transparent) 0 55%, transparent 56%);
+  }
+  .card img { width: 84%; height: 84%; object-fit: contain; transition: transform .2s ease; }
+  .card:hover img { transform: scale(1.07); }
+  .card .name { max-width: 100%; font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .en { max-width: 100%; margin-top: -2px; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .types { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .type {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--tc);
+    color: var(--tf, #fff);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-shadow: 0 1px 1px rgba(0,0,0,.22);
+  }
+  .type.light { text-shadow: none; }
+
+  .status { display: grid; place-items: center; gap: 14px; padding: 80px 16px; text-align: center; color: var(--muted); }
+  .status .pokeball { --s: 64px; }
+  .primary-btn { padding: 10px 22px; border: 0; border-radius: 999px; background: var(--red); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+
+  footer { padding: 24px 0 40px; text-align: center; font-size: 12px; color: var(--muted); }
+  footer a { color: inherit; }
+
+  /* ---------- 상세 모달 ---------- */
+  .modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; }
+  .backdrop { position: absolute; inset: 0; background: rgba(8,8,10,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+  .sheet {
+    position: relative;
+    width: min(760px, 100%);
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    border-radius: 28px;
+    background: var(--surface);
+    box-shadow: 0 30px 80px rgba(0,0,0,.45);
+    animation: pop .22s ease-out;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+  .sheet-top { padding: 14px 16px 26px; }
+  .sheet-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .sheet-nav .group { display: flex; gap: 8px; }
+  .icon-btn {
+    display: grid;
+    place-items: center;
+    width: 40px; height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,.34); }
+  .icon-btn:disabled { opacity: .35; cursor: default; }
+  .sheet-num { font-family: 'Jua', sans-serif; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .hero { position: relative; width: min(250px, 62vw); aspect-ratio: 1; margin: 2px auto 0; display: grid; place-items: center; }
+  .hero::before { content: ''; position: absolute; inset: 5%; border-radius: 50%; background: rgba(255,255,255,.17); box-shadow: inset 0 0 0 12px rgba(255,255,255,.08); }
+  .hero img { position: relative; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 14px rgba(0,0,0,.28)); }
+  .shiny-btn {
+    position: absolute;
+    right: 16px; bottom: 18px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .shiny-btn[aria-pressed="true"] { background: #fff; color: var(--red); }
+  .sheet .ball-top { position: relative; }
+  .sheet .ball-btn { width: 58px; height: 58px; }
+  .sheet-body { padding: 40px 24px 28px; }
+  @media (max-width: 520px) {
+    .modal { padding: 0; place-items: end center; }
+    .sheet { max-height: 94dvh; border-radius: 26px 26px 0 0; }
+    .sheet-body { padding: 38px 16px 24px; }
+  }
+
+  .d-head { text-align: center; }
+  .d-head h2 { margin: 0; font-size: 30px; font-weight: 900; line-height: 1.2; }
+  .d-en { color: var(--muted); font-size: 14px; }
+  .d-genus { margin-top: 2px; font-size: 14px; font-weight: 500; }
+  .d-head .types { justify-content: center; margin-top: 10px; }
+  .d-head .type { font-size: 14px; padding: 3px 14px; }
+  .flavor { margin: 20px 0 0; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); line-height: 1.75; }
+  .info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  .info > div { padding: 10px 8px; border-radius: 14px; background: var(--surface-2); text-align: center; }
+  .info span { display: block; font-size: 12px; color: var(--muted); }
+  .info b { font-size: 15px; }
+  .d-section h3 { display: flex; align-items: center; gap: 8px; margin: 26px 0 10px; font-size: 16px; }
+  .d-section h3 .pokeball { --s: 18px; }
+  .ability { padding: 10px 14px; border-radius: 14px; background: var(--surface-2); margin-top: 8px; }
+  .ability b { font-size: 15px; }
+  .ability em { margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--band); color: #fff; font-size: 11px; font-style: normal; font-weight: 700; vertical-align: 2px; }
+  .ability p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+  .stat { display: grid; grid-template-columns: 70px 36px 1fr; align-items: center; gap: 10px; margin: 7px 0; font-size: 14px; }
+  .stat span { color: var(--muted); }
+  .stat b { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .bar i { display: block; height: 100%; width: var(--w); border-radius: inherit; background: var(--c); animation: grow .7s ease-out; }
+  @keyframes grow { from { width: 0; } }
+  .stat.total { padding-top: 6px; border-top: 1px dashed var(--line); }
+  .stat.total span, .stat.total b { color: var(--text); font-weight: 900; }
+  .evo { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; }
+  .evo-stage { display: flex; flex-direction: column; gap: 4px; }
+  .evo-stage.many { flex-direction: row; flex-wrap: wrap; justify-content: center; max-width: 360px; }
+  .evo-arrow { color: var(--muted); font-size: 26px; padding: 0 2px; }
+  .evo-mon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 118px;
+    padding: 6px 4px 8px;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .evo-mon:hover { background: var(--surface-2); }
+  .evo-mon.current { border-color: var(--red); background: color-mix(in srgb, var(--red) 8%, transparent); }
+  .evo-mon img { width: 72px; height: 72px; object-fit: contain; }
+  .evo-cond {
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+    word-break: keep-all;
+  }
+  .evo-mon.current .evo-cond { background: var(--surface); }
+  .muted { color: var(--muted); }
+
+  /* 진화 기믹 */
+  .gimmicks { display: grid; gap: 14px; }
+  .gimmick {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    gap: 22px;
+    padding: 20px 22px;
+    border: 2px solid color-mix(in srgb, var(--gc) 35%, var(--line));
+    border-radius: 22px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--gc) 9%, var(--surface)), var(--surface) 55%);
+  }
+  @media (max-width: 600px) {
+    .gimmick { grid-template-columns: 1fr; gap: 10px; padding: 16px; }
+    .g-art { width: min(220px, 70%); margin: 0 auto; }
+  }
+  .g-art { display: flex; align-items: center; }
+  .g-art img { width: 100%; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 10px 14px rgba(0,0,0,.18)); }
+  .g-label { display: inline-block; padding: 3px 14px; border-radius: 999px; background: var(--gc); color: #fff; font-size: 13px; font-weight: 700; }
+  .g-name { margin-top: 8px; font-size: 24px; font-weight: 900; line-height: 1.3; }
+  .gimmick .types { margin-top: 8px; }
+  .gimmick .type { font-size: 13px; padding: 2px 12px; }
+  .g-how {
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--gc) 9%, var(--surface-2));
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+  .g-row { margin-top: 10px; font-size: 15px; }
+  .g-row span { margin-right: 10px; color: var(--muted); font-size: 14px; }
+  .g-row b { font-variant-numeric: tabular-nums; }
+  .g-stats { margin-top: 12px; }
+  .g-stat { display: grid; grid-template-columns: 66px 40px 1fr 48px; align-items: center; gap: 10px; margin: 6px 0; font-size: 14px; }
+  .g-stat span { color: var(--muted); }
+  .g-stat b { text-align: right; font-variant-numeric: tabular-nums; }
+  .g-stat em { text-align: right; }
+  .g-stat.total { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .g-stat.total span, .g-stat.total b { color: var(--text); font-weight: 900; }
+  .gimmick em { font-size: 13px; font-style: normal; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .gimmick em.up { color: #1e9e4a; }
+  .gimmick em.down { color: #d6336c; }
+  .g-note { margin: 12px 0 0; font-size: 14px; color: var(--muted); }
+  .g-weak { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .g-weak .types { margin: 0; }
+  .evo-mon.regional { border: 2px dashed color-mix(in srgb, var(--rc) 55%, transparent); }
+  .evo-mon.regional > span { color: var(--rc); font-weight: 700; }
+
+  /* 타입 상성 */
+  .matchup { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+  .mu-box { padding: 12px 14px 4px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+  .mu-box h4 { margin: 0; padding-bottom: 8px; border-bottom: 2px solid var(--text); font-size: 14px; }
+  .mu-row { display: grid; grid-template-columns: 76px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+  .mu-box h4 + .mu-row { border-top: 0; }
+  .mu-row .types { margin: 0; align-self: center; }
+  .mu-row .type { font-size: 12px; padding: 1px 9px; }
+  .mu-label { display: flex; align-items: center; padding-right: 8px; border-right: 1px solid var(--line); font-size: 13px; font-weight: 900; }
+  .mu-label.weak { color: #e03131; }
+  .mu-label.resist { color: #2b8a3e; }
+  .mu-label.immune { color: var(--muted); }
+  .matchup + .rec-note { margin-top: 8px; }
+
+  /* 추천 기술 배치 */
+  .rec-note { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+  .rec-note a { color: var(--red); font-weight: 700; }
+  .chips.small { flex-wrap: wrap; overflow: visible; padding: 0; gap: 6px; }
+  .chips.small .chip { padding: 4px 12px; font-size: 13px; }
+  .chip .n { margin-left: 5px; font-size: 12px; opacity: .65; }
+  .sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 10px; }
+  .sets .loading-row { grid-column: 1 / -1; padding: 20px 0; }
+  .set { padding: 12px 14px 14px; border: 2px solid var(--line); border-radius: 16px; }
+  .set-name { margin-bottom: 8px; font-weight: 900; }
+  .set-moves { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .set-moves li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 6px; padding: 6px 10px; border-radius: 10px; background: var(--surface-2); font-size: 14px; font-weight: 500; }
+  .set-moves li:has(i) { justify-content: flex-start; }
+  .set-moves i { font-size: 11px; font-style: normal; color: var(--muted); }
+  .set-move { display: inline-flex; align-items: center; gap: 6px; }
+  .set-move .type { font-size: 11px; padding: 1px 8px; }
+  .set-extra { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .tdot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--tc); }
+  .set-meta { display: grid; gap: 4px; margin: 10px 0 0; font-size: 13px; }
+  .set-meta div { display: grid; grid-template-columns: 58px 1fr; gap: 8px; }
+  .set-meta dt { color: var(--muted); }
+  .set-meta dd { margin: 0; }
+
+  /* 기술 목록 */
+  .move-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .move-tools select {
+    max-width: 100%;
+    height: 34px;
+    padding: 0 12px;
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+  table.moves { width: 100%; border-collapse: collapse; font-size: 14px; white-space: nowrap; }
+  .moves th { padding: 8px 10px; background: var(--surface-2); color: var(--muted); font-size: 12px; font-weight: 700; text-align: left; }
+  .moves td { padding: 7px 10px; border-top: 1px solid var(--line); }
+  .moves .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .moves .mname { font-weight: 500; }
+  .moves .tm { color: var(--muted); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .moves tbody tr:hover { background: var(--surface-2); }
+  .moves .type { font-size: 11px; padding: 1px 8px; }
+  .cls { padding: 1px 8px; border-radius: 999px; background: var(--cc); color: #fff; font-size: 11px; font-weight: 700; }
+  .loading-row { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px 0 16px; color: var(--muted); }
+  .loading-row .pokeball { --s: 28px; }
+</style>
+</head>
+<body>
+
+<header class="ball-top">
+  <div class="wrap header-inner">
+    <div class="pokeball" aria-hidden="true"></div>
+    <div>
+      <h1>포켓몬 도감</h1>
+      <p class="sub">전국도감 1세대부터 9세대까지 1025마리</p>
+    </div>
+  </div>
+</header>
+<div class="ball-band"><div class="ball-btn" aria-hidden="true"></div></div>
+<div class="spacer"></div>
+
+<div class="controls">
+  <div class="wrap">
+    <label class="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="이름이나 번호로 검색 (예: 피카츄, pikachu, 25)" autocomplete="off" aria-label="포켓몬 검색">
+    </label>
+    <div class="chips" id="gens" role="group" aria-label="세대 선택"></div>
+    <div class="chips" id="types" role="group" aria-label="타입 선택"></div>
+    <div class="meta">
+      <span id="count"></span>
+      <button class="link-btn" id="reset" hidden>필터 초기화</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+  <div class="status" id="status"></div>
+</main>
+
+<footer class="wrap">
+  데이터 출처: <a href="https://pokeapi.co" target="_blank" rel="noopener">PokeAPI</a> · 포켓몬스터 © Nintendo / Creatures / GAME FREAK
+</footer>
+
+<div class="modal" id="modal" hidden>
+  <div class="backdrop" data-close></div>
+  <article class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="d-name">
+    <div class="ball-top sheet-top">
+      <div class="sheet-nav">
+        <div class="group">
+          <button class="icon-btn" id="prev" aria-label="이전 포켓몬">‹</button>
+          <button class="icon-btn" id="next" aria-label="다음 포켓몬">›</button>
+        </div>
+        <span class="sheet-num" id="d-num"></span>
+        <button class="icon-btn" data-close id="close" aria-label="닫기">✕</button>
+      </div>
+      <div class="hero"><img id="d-img" alt=""></div>
+      <button class="shiny-btn" id="shiny" aria-pressed="false">✨ 이로치</button>
+    </div>
+    <div class="ball-band"><div class="ball-btn" aria-hidden="true"></div></div>
+    <div class="sheet-body" id="d-body"></div>
+  </article>
+</div>
+
+<script>
+const TOTAL = 1025;
+const API = 'https://pokeapi.co/api/v2';
+const NAMES_CSV = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv';
+const ART_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork';
+const CACHE_KEY = 'pokedex-index-v3';
+const LANG_KO = '3', LANG_EN = '9';
+
+const GENS = [[1, 151], [152, 251], [252, 386], [387, 493], [494, 649], [650, 721], [722, 809], [810, 905], [906, 1025]];
+
+// 영문 키: [한국어 이름, 색, 글자색]
+const TYPES = {
+  normal:   ['노말', '#9fa19f'],
+  fire:     ['불꽃', '#e62829'],
+  water:    ['물', '#2980ef'],
+  grass:    ['풀', '#3fa129'],
+  electric: ['전기', '#fac000', '#3a2c00'],
+  ice:      ['얼음', '#3dcef3', '#063848'],
+  fighting: ['격투', '#ff8000'],
+  poison:   ['독', '#9141cb'],
+  ground:   ['땅', '#915121'],
+  flying:   ['비행', '#81b9ef'],
+  psychic:  ['에스퍼', '#ef4179'],
+  bug:      ['벌레', '#91a119'],
+  rock:     ['바위', '#afa981'],
+  ghost:    ['고스트', '#704170'],
+  dragon:   ['드래곤', '#5060e1'],
+  dark:     ['악', '#624d4e'],
+  steel:    ['강철', '#60a1b8'],
+  fairy:    ['페어리', '#ef70ef'],
+};
+
+// 타입 상성표: 공격 타입 → { 방어 타입: 배율 } (1배는 생략)
+const TYPE_CHART = {
+  normal: { rock: .5, ghost: 0, steel: .5 },
+  fire: { fire: .5, water: .5, grass: 2, ice: 2, bug: 2, rock: .5, dragon: .5, steel: 2 },
+  water: { fire: 2, water: .5, grass: .5, ground: 2, rock: 2, dragon: .5 },
+  electric: { water: 2, electric: .5, grass: .5, ground: 0, flying: 2, dragon: .5 },
+  grass: { fire: .5, water: 2, grass: .5, poison: .5, ground: 2, flying: .5, bug: .5, rock: 2, dragon: .5, steel: .5 },
+  ice: { fire: .5, water: .5, grass: 2, ice: .5, ground: 2, flying: 2, dragon: 2, steel: .5 },
+  fighting: { normal: 2, ice: 2, poison: .5, flying: .5, psychic: .5, bug: .5, rock: 2, ghost: 0, dark: 2, steel: 2, fairy: .5 },
+  poison: { grass: 2, poison: .5, ground: .5, rock: .5, ghost: .5, steel: 0, fairy: 2 },
+  ground: { fire: 2, electric: 2, grass: .5, poison: 2, flying: 0, bug: .5, rock: 2, steel: 2 },
+  flying: { electric: .5, grass: 2, fighting: 2, bug: 2, rock: .5, steel: .5 },
+  psychic: { fighting: 2, poison: 2, psychic: .5, dark: 0, steel: .5 },
+  bug: { fire: .5, grass: 2, fighting: .5, poison: .5, flying: .5, psychic: 2, ghost: .5, dark: 2, steel: .5, fairy: .5 },
+  rock: { fire: 2, ice: 2, fighting: .5, ground: .5, flying: 2, bug: 2, steel: .5 },
+  ghost: { normal: 0, psychic: 2, ghost: 2, dark: .5 },
+  dragon: { dragon: 2, steel: .5, fairy: 0 },
+  dark: { fighting: .5, psychic: 2, ghost: 2, dark: .5, fairy: .5 },
+  steel: { fire: .5, water: .5, electric: .5, ice: 2, rock: 2, steel: .5, fairy: 2 },
+  fairy: { fire: .5, fighting: 2, poison: .5, dragon: 2, dark: 2, steel: .5 },
+};
+
+const STAT_KO = {
+  hp: 'HP', attack: '공격', defense: '방어',
+  'special-attack': '특수공격', 'special-defense': '특수방어', speed: '스피드',
+};
+
+const MOVES_CSV = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/moves.csv';
+const MOVE_NAMES_CSV = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/move_names.csv';
+const MOVE_CACHE_KEY = 'pokedex-moves-v1';
+const MACHINES_CSV = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/machines.csv';
+const ITEMS_CSV = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/items.csv';
+const MACHINE_CACHE_KEY = 'pokedex-machines-v1';
+// Smogon(포켓몬 대전 커뮤니티)이 정리한 9세대 대전용 추천 세트
+const SETS_URL = 'https://data.pkmn.cc/sets/gen9.json';
+
+const TYPE_BY_ID = ['normal', 'fighting', 'flying', 'poison', 'ground', 'rock', 'bug', 'ghost', 'steel',
+  'fire', 'water', 'grass', 'electric', 'psychic', 'ice', 'dragon', 'dark', 'fairy'];
+const MOVE_CLASS = { 1: ['변화', '#8c8c96'], 2: ['물리', '#e8603c'], 3: ['특수', '#4a78e6'] };
+const LEARN_METHODS = [['level-up', '레벨업'], ['machine', '기술머신'], ['egg', '알 기술'], ['tutor', '기술 가르침']];
+
+// 발매 순서대로 (목록에서는 최신 게임이 위로 오게 뒤집어 쓴다)
+const VG_KO = {
+  'red-green-japan': '레드·그린 (일본)', 'blue-japan': '블루 (일본)',
+  'red-blue': '레드·블루', yellow: '피카츄', 'gold-silver': '골드·실버', crystal: '크리스탈',
+  'ruby-sapphire': '루비·사파이어', emerald: '에메랄드', 'firered-leafgreen': '파이어레드·리프그린',
+  colosseum: '콜로세움', xd: 'XD', 'diamond-pearl': '디아루가·펄기아', platinum: '기라티나',
+  'heartgold-soulsilver': '하트골드·소울실버', 'black-white': '블랙·화이트', 'black-2-white-2': '블랙2·화이트2',
+  'x-y': 'X·Y', 'omega-ruby-alpha-sapphire': '오메가루비·알파사파이어', 'sun-moon': '썬·문',
+  'ultra-sun-ultra-moon': '울트라썬·울트라문', 'lets-go-pikachu-lets-go-eevee': '레츠고 피카츄·이브이',
+  'sword-shield': '소드·실드', 'the-isle-of-armor': '갑옷의 외딴섬', 'the-crown-tundra': '왕관의 설원',
+  'brilliant-diamond-shining-pearl': '브릴리언트다이아몬드·샤이닝펄', 'legends-arceus': '레전드 아르세우스',
+  'scarlet-violet': '스칼렛·바이올렛', 'the-teal-mask': '벽록의 가면', 'the-indigo-disk': '남청의 원반',
+  'legends-za': '레전드 Z-A', 'mega-dimension': '메가 디멘션', champions: '포켓몬 챔피언스',
+};
+const VG_ORDER = Object.keys(VG_KO);
+// PokeAPI의 version_group id 순서 (CSV는 이름 대신 id를 쓴다)
+const VG_BY_ID = ['red-blue', 'yellow', 'gold-silver', 'crystal', 'ruby-sapphire', 'emerald', 'firered-leafgreen',
+  'diamond-pearl', 'platinum', 'heartgold-soulsilver', 'black-white', 'colosseum', 'xd', 'black-2-white-2', 'x-y',
+  'omega-ruby-alpha-sapphire', 'sun-moon', 'ultra-sun-ultra-moon', 'lets-go-pikachu-lets-go-eevee', 'sword-shield',
+  'the-isle-of-armor', 'the-crown-tundra', 'brilliant-diamond-shining-pearl', 'legends-arceus', 'scarlet-violet',
+  'the-teal-mask', 'the-indigo-disk', 'red-green-japan', 'blue-japan', 'legends-za', 'mega-dimension', 'champions'];
+// 본편과 DLC는 기술머신을 같이 쓴다 (DLC에서 추가된 기술머신은 DLC 쪽에 기록돼 있음)
+const VG_FAMILIES = [
+  ['scarlet-violet', 'the-teal-mask', 'the-indigo-disk'],
+  ['sword-shield', 'the-isle-of-armor', 'the-crown-tundra'],
+];
+// 기술머신 번호가 세 자리인 게임
+const TM_THREE_DIGIT = new Set(['scarlet-violet', 'the-teal-mask', 'the-indigo-disk', 'legends-za', 'mega-dimension']);
+const VG_PREFERRED = ['scarlet-violet', 'champions', 'sword-shield', 'brilliant-diamond-shining-pearl', 'ultra-sun-ultra-moon'];
+
+const NATURES = 'Hardy Lonely Brave Adamant Naughty Bold Docile Relaxed Impish Lax Timid Hasty Serious Jolly Naive Modest Mild Quiet Bashful Rash Calm Gentle Sassy Careful Quirky'.split(' ');
+const NATURES_KO = '노력 외로움 용감 고집 개구쟁이 대담 온순 무사태평 장난꾸러기 촐랑 겁쟁이 성급 성실 명랑 천진난만 조심 의젓 냉정 수줍음 덜렁 차분 얌전 건방 신중 변덕'.split(' ');
+// 성격표의 행은 오르는 능력치, 열은 내려가는 능력치
+const NATURE_STATS = ['공격', '방어', '스피드', '특공', '특방'];
+const EV_KO = { hp: 'HP', atk: '공격', def: '방어', spa: '특공', spd: '특방', spe: '스피드' };
+const FORMAT_KO = {
+  ou: 'OU', ubers: 'Ubers', uu: 'UU', ru: 'RU', nu: 'NU', pu: 'PU', zu: 'ZU', lc: 'LC (1단계)', nfe: 'NFE (미진화)',
+  doublesou: '더블 OU', nationaldex: '내셔널도감', monotype: '모노타입', '1v1': '1대1', battlestadiumsingles: '배틀스타디움 싱글',
+  ubersuu: 'Ubers UU', nationaldexmonotype: '내셔널도감 모노타입', nationaldexuu: '내셔널도감 UU',
+  almostanyability: '특성 자유 (AAA)', godlygift: '갓리 기프트', inheritance: '인헤리턴스', balancedhackmons: '밸런스드 해크몬',
+};
+const FORMAT_ORDER = ['ou', 'ubers', 'uu', 'ru', 'nu', 'pu', 'zu', 'lc', 'nfe', 'battlestadiumsingles', 'doublesou'];
+// 자동 추천에서 빼는 기술 (반동으로 쉬어야 하거나, 2턴이 걸리거나, 기절하는 등 실전에서 쓰기 어려운 기술)
+const AUTO_EXCLUDE = new Set(('hyper-beam giga-impact blast-burn frenzy-plant hydro-cannon rock-wrecker roar-of-time ' +
+  'prismatic-laser eternabeam meteor-assault explosion self-destruct misty-explosion focus-punch dream-eater belch ' +
+  'last-resort synchronoise future-sight doom-desire sky-attack solar-beam solar-blade razor-wind skull-bash bide ' +
+  'fly dig dive bounce phantom-force shadow-force geomancy steel-beam mind-blown final-gambit natural-gift fling ' +
+  'spit-up beat-up present snore sky-drop freeze-shock ice-burn dynamax-cannon behemoth-blade behemoth-bash ' +
+  'tera-blast tera-starstorm').split(' '));
+const SHOWDOWN_ID = { 29: 'nidoranf', 32: 'nidoranm' };
+
+// 배틀 중 특수 변신 (PokeAPI에서는 포켓몬의 다른 모습(variety)으로 들어 있다)
+const GIMMICKS = {
+  mega: { label: '메가진화', color: '#7b4fd6' },
+  gmax: { label: '거다이맥스', color: '#e0245e' },
+  primal: { label: '원시회귀', color: '#e8590c' },
+  ultra: { label: '울트라버스트', color: '#d49a00' },
+  eternamax: { label: '무한다이맥스', color: '#7a1f63' },
+};
+const PRIMAL_ORB = { kyogre: 'blue-orb', groudon: 'red-orb' };
+// 같은 포켓몬의 메가진화가 모습별로 나뉜 경우 (예: meowstic-female-mega)
+const FORM_KO = {
+  male: '수컷', female: '암컷', curly: '젖힌 모습', droopy: '늘어진 모습', stretchy: '뻗은 모습', original: '500년 전의 색',
+  amped: '하이한 모습', low: '로우한 모습', single: '일격의 태세', rapid: '연격의 태세',
+};
+
+const REGIONS = { alola: ['알로라', '#f08c00'], galar: ['가라르', '#1c7ed6'], hisui: ['히스이', '#5c940d'], paldea: ['팔데아', '#c2255c'] };
+const REGION_FORM_KO = { zen: '달마 모드', 'combat-breed': '컴뱃종', 'blaze-breed': '블레이즈종', 'aqua-breed': '워터종' };
+
+const $ = (s) => document.querySelector(s);
+const grid = $('#grid'), statusBox = $('#status'), modal = $('#modal'), body = $('#d-body');
+
+const state = {
+  list: [], forms: [], entries: [], cards: [], visible: [], scrollToRegionals: false, query: '', gen: 0, type: null, current: null, shiny: false, pushed: false,
+  detail: null, moveVG: null, moveMethod: 'level-up', recSets: null, recFormat: null,
+};
+const details = new Map();
+let MOVES = {}, MOVES_BY_NORM = {}, MACHINES = {};
+
+const art = (id, shiny) => `${ART_BASE}${shiny ? '/shiny' : ''}/${id}.png`;
+const pad = (id) => String(id).padStart(4, '0');
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const idFromUrl = (url) => Number(url.match(/\/(\d+)\/?$/)[1]);
+const cleanText = (s) => s.replace(/[\n\f\r­]+/g, ' ').replace(/\s+/g, ' ').trim();
+const nameOf = (id) => state.list[id - 1]?.ko || state.list[id - 1]?.en || `#${id}`;
+// 쇼다운식 ID: 영문 소문자와 숫자만 남긴다 ("Will-O-Wisp" → "willowisp")
+const normId = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+const slugify = (s) => s.toLowerCase().replace(/['’.:%]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+// 받침에 따라 "로/으로"를 붙인다 (ㄹ 받침은 "로")
+function withRo(word) {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  if (code < 0 || code > 11171) return `${word}(으)로`;
+  const jong = code % 28;
+  return word + (jong === 0 || jong === 8 ? '로' : '으로');
+}
+const asList = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
+// 같은 언어 항목 중 가장 최근 것을 고르고, 한국어가 없으면 영어로 대신한다
+function latestText(entries, key) {
+  const pick = (lang) => entries.filter((e) => e.language.name === lang).pop();
+  const e = pick('ko') || pick('en');
+  return e ? cleanText(e[key]) : '';
+}
+
+async function getJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  return res.json();
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else quoted = false;
+      } else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (c !== '\r') field += c;
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+// 목록에 필요한 이름·분류·타입을 한 번에 모은다 (CSV 1회 + 타입 18회 요청)
+// 타입 목록에는 리전폼(id 10000번대)도 들어 있어서 리전폼 카드도 여기서 만든다
+async function loadIndex() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+    if (cached?.list?.length === TOTAL && Array.isArray(cached.forms)) return cached;
+  } catch {}
+
+  const [csv, ...typeData] = await Promise.all([
+    fetch(NAMES_CSV).then((r) => { if (!r.ok) throw new Error(`${r.status} names`); return r.text(); }),
+    ...Object.keys(TYPES).map((t) => getJSON(`${API}/type/${t}`)),
+  ]);
+
+  const list = Array.from({ length: TOTAL }, (_, i) => ({ id: i + 1, ko: '', en: '', genus: '', types: [] }));
+  for (const [id, lang, name, genus] of parseCSV(csv).slice(1)) {
+    const p = list[id - 1];
+    if (!p) continue;
+    if (lang === LANG_KO) { p.ko = name; p.genus = genus; }
+    else if (lang === LANG_EN) p.en = name;
+  }
+  const formTypes = {};
+  for (const t of typeData) {
+    for (const { slot, pokemon } of t.pokemon) {
+      const pid = idFromUrl(pokemon.url);
+      if (pid <= TOTAL) list[pid - 1].types[slot - 1] = t.name;
+      else if (regionOf(pokemon.name)) (formTypes[pokemon.name] ||= { id: pid, types: [] }).types[slot - 1] = t.name;
+    }
+  }
+  list.forEach((p) => { p.types = p.types.filter(Boolean); });
+
+  // "raichu-alola" → 원래 포켓몬 "raichu"를 영어 이름으로 찾는다
+  const idBySlug = Object.fromEntries(list.map((p) => [slugify(p.en), p.id]));
+  const forms = Object.entries(formTypes).map(([name, f]) => {
+    const region = regionOf(name);
+    const [baseSlug, rest = ''] = name.split(`-${region}`);
+    const base = list[idBySlug[baseSlug] - 1];
+    if (!base) return null;
+    const extra = REGION_FORM_KO[rest.replace(/^-/, '')];
+    return {
+      id: f.id,
+      name,
+      base: base.id,
+      region,
+      ko: `${REGIONS[region][0]} ${base.ko || base.en}${extra ? ` (${extra})` : ''}`,
+      en: `${base.en} (${region[0].toUpperCase()}${region.slice(1)})`,
+      types: f.types.filter(Boolean),
+    };
+  }).filter(Boolean).sort((a, b) => a.base - b.base || a.id - b.id);
+
+  const index = { list, forms };
+  try {
+    ['pokedex-index-v1', 'pokedex-index-v2'].forEach((k) => localStorage.removeItem(k)); // 예전 형식
+    localStorage.setItem(CACHE_KEY, JSON.stringify(index));
+  } catch {}
+  return index;
+}
+
+// 기술 정보 (한국어 이름·타입·위력 등)를 CSV 두 개로 한 번에 받는다
+let moveDataPromise = null;
+function loadMoveData() {
+  moveDataPromise ||= (async () => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(MOVE_CACHE_KEY));
+      if (cached && Object.keys(cached).length > 900) return cached;
+    } catch {}
+    const [movesCsv, namesCsv] = await Promise.all([MOVES_CSV, MOVE_NAMES_CSV].map((u) =>
+      fetch(u).then((r) => { if (!r.ok) throw new Error(`${r.status} ${u}`); return r.text(); })));
+    const data = {};
+    for (const [id, slug, , typeId, power, pp, acc, , , cls] of parseCSV(movesCsv).slice(1)) {
+      if (!id) continue;
+      data[id] = { ko: '', slug, type: TYPE_BY_ID[typeId - 1] || null, power: Number(power) || 0, pp: Number(pp) || 0, acc: Number(acc) || 0, cls: Number(cls) };
+    }
+    for (const [id, lang, name] of parseCSV(namesCsv).slice(1)) {
+      if (lang === LANG_KO && data[id]) data[id].ko = name;
+    }
+    try { localStorage.setItem(MOVE_CACHE_KEY, JSON.stringify(data)); } catch {}
+    return data;
+  })().then((data) => {
+    MOVES = data;
+    MOVES_BY_NORM = Object.fromEntries(Object.values(data).map((m) => [normId(m.slug), m]));
+    return data;
+  }).catch((err) => { moveDataPromise = null; throw err; });
+  return moveDataPromise;
+}
+
+// 게임별 기술머신 번호: { "scarlet-violet:5": "TM001", "sword-shield:14": "TR00", ... }
+let machinePromise = null;
+function loadMachines() {
+  machinePromise ||= (async () => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(MACHINE_CACHE_KEY));
+      if (cached && Object.keys(cached).length > 1000) return cached;
+    } catch {}
+    const [machinesCsv, itemsCsv] = await Promise.all([MACHINES_CSV, ITEMS_CSV].map((u) =>
+      fetch(u).then((r) => { if (!r.ok) throw new Error(`${r.status} ${u}`); return r.text(); })));
+    const itemSlug = {};
+    for (const [id, slug] of parseCSV(itemsCsv).slice(1)) itemSlug[id] = slug;
+    const data = {};
+    for (const [, vgId, itemId, moveId] of parseCSV(machinesCsv).slice(1)) {
+      const vg = VG_BY_ID[vgId - 1];
+      const m = /^(tm|hm|tr)(\d+)$/.exec(itemSlug[itemId] || '');
+      if (!vg || !m) continue;
+      data[`${vg}:${moveId}`] = m[1].toUpperCase() + (TM_THREE_DIGIT.has(vg) ? m[2].padStart(3, '0') : m[2]);
+    }
+    try { localStorage.setItem(MACHINE_CACHE_KEY, JSON.stringify(data)); } catch {}
+    return data;
+  })().then((data) => (MACHINES = data))
+    .catch((err) => { machinePromise = null; throw err; });
+  return machinePromise;
+}
+
+function machineLabel(vg, moveId) {
+  const family = VG_FAMILIES.find((f) => f.includes(vg)) || [vg];
+  for (const v of [vg, ...family]) if (MACHINES[`${v}:${moveId}`]) return MACHINES[`${v}:${moveId}`];
+  return '';
+}
+
+/* ---------- 진화 기믹 ---------- */
+
+function gimmickKind(name) {
+  if (/-mega(-|$)/.test(name)) return 'mega';
+  if (name.endsWith('-gmax')) return 'gmax';
+  if (name.endsWith('-primal')) return 'primal';
+  if (name === 'necrozma-ultra') return 'ultra';
+  if (name.endsWith('-eternamax')) return 'eternamax';
+  return null;
+}
+
+let megaStonesPromise = null;
+function loadMegaStones() {
+  megaStonesPromise ||= getJSON(`${API}/item-category/mega-stones`)
+    .then((c) => c.items)
+    .catch((err) => { megaStonesPromise = null; console.error(err); return []; });
+  return megaStonesPromise;
+}
+
+// 메가스톤 이름은 포켓몬 이름에서 조금씩 변형돼서("blastoise" → "blastoisinite") 앞부분이 가장 길게 겹치는 돌을 고른다
+async function megaStone(formName) {
+  const stones = await loadMegaStones();
+  const base = formName.replace(/-mega.*$/, '').replace(/-/g, '');
+  const suffix = (formName.match(/-mega-([xyz])$/) || [])[1];
+  let best = null, bestLen = 3;
+  for (const s of stones) {
+    const [, stemRaw, stoneSuffix] = s.name.match(/^(.*?)(?:-([xyz]))?$/);
+    if (stoneSuffix !== suffix) continue;
+    const stem = stemRaw.replace(/-/g, '');
+    let n = 0;
+    while (n < stem.length && stem[n] === base[n]) n++;
+    if (n > bestLen) { best = s; bestLen = n; }
+  }
+  return best;
+}
+
+async function itemKo(slug, fallback) {
+  return (await koName({ url: `${API}/item/${slug}`, name: slug })) || fallback || slug.replace(/-/g, ' ');
+}
+
+async function gimmickCondition(kind, name) {
+  if (kind === 'mega') {
+    if (name === 'rayquaza-mega') return `${MOVES_BY_NORM.dragonascent?.ko || '화룡점정'} 배운 상태로 배틀 중 메가진화`;
+    const stone = await megaStone(name);
+    return `${stone ? await itemKo(stone.name) : '메가스톤'} 지니고 배틀 중 메가진화`;
+  }
+  if (kind === 'gmax') return '거다이맥스 개체가 배틀 중 다이맥스하면 변신 (소드·실드)';
+  if (kind === 'primal') return `${await itemKo(PRIMAL_ORB[name.replace('-primal', '')])} 지니고 배틀에 나오면 자동으로 변신`;
+  if (kind === 'ultra') return `황혼의 갈기·새벽의 날개 모습에서 ${await itemKo('ultranecrozium-z', '울트라네크로Z')} 지니고 배틀 중 변신`;
+  return '게임 속 특별한 전투에서만 볼 수 있는 모습';
+}
+
+async function loadGimmick(ref, baseKo, speciesName) {
+  const kind = gimmickKind(ref.name);
+  const fp = await getJSON(ref.url);
+  const [form, ability, how] = await Promise.all([
+    getJSON(fp.forms[0].url).catch(() => null),
+    fp.abilities[0] ? koName(fp.abilities[0].ability).then((k) => k || fp.abilities[0].ability.name) : '',
+    gimmickCondition(kind, ref.name),
+  ]);
+  const ko = (arr) => arr?.find((n) => n.language.name === 'ko')?.name;
+  const suffix = (ref.name.match(/-mega-([xyz])$/) || [])[1]?.toUpperCase() || '';
+  const fallbackName = {
+    mega: `메가${baseKo}${suffix}`, gmax: `거다이맥스 ${baseKo}`, primal: `원시${baseKo}`,
+    ultra: `울트라${baseKo}`, eternamax: `무한다이맥스 ${baseKo}`,
+  }[kind];
+  // "원시회귀의 모습"처럼 모습 이름만 있는 경우가 있어서, 포켓몬 이름이 들어간 것만 쓴다
+  const formPart = ref.name.slice(speciesName.length + 1).split('-')[0];
+  const name = ([ko(form?.names), ko(form?.form_names)].find((n) => n?.includes(baseKo)) || fallbackName)
+    + (FORM_KO[formPart] ? ` (${FORM_KO[formPart]})` : '');
+  return {
+    kind,
+    label: GIMMICKS[kind].label,
+    color: GIMMICKS[kind].color,
+    name,
+    img: fp.sprites.other?.['official-artwork']?.front_default || fp.sprites.front_default,
+    types: fp.types.map((t) => t.type.name),
+    stats: fp.stats.map((s) => ({ key: s.stat.name, value: s.base_stat })),
+    ability,
+    how,
+  };
+}
+
+/* ---------- 리전폼 ---------- */
+
+function regionOf(name) {
+  if (/-(totem|cap)(-|$)/.test(name)) return null; // 토템 포켓몬, 모자 쓴 피카츄는 리전폼이 아니다
+  return name.match(/-(alola|galar|hisui|paldea)(?:-|$)/)?.[1] || null;
+}
+
+async function loadRegional(ref, baseKo) {
+  const region = regionOf(ref.name);
+  const [regionKo, color] = REGIONS[region];
+  const fp = await getJSON(ref.url);
+  const abilities = await Promise.all(fp.abilities.map(async (a) => {
+    const name = (await koName(a.ability)) || a.ability.name;
+    return a.is_hidden ? `${name}(숨겨진 특성)` : name;
+  }));
+  const extra = ref.name.split(`-${region}`)[1].replace(/^-/, '');
+  return {
+    key: ref.name,
+    label: `${regionKo}의 모습`,
+    color,
+    name: `${regionKo} ${baseKo}${REGION_FORM_KO[extra] ? ` (${REGION_FORM_KO[extra]})` : ''}`,
+    img: fp.sprites.other?.['official-artwork']?.front_default || fp.sprites.front_default,
+    types: fp.types.map((t) => t.type.name),
+    stats: fp.stats.map((s) => ({ key: s.stat.name, value: s.base_stat })),
+    ability: abilities.join(' / '),
+    how: '',
+  };
+}
+
+let setsPromise = null;
+function loadSets() {
+  setsPromise ||= getJSON(SETS_URL)
+    .then((raw) => Object.fromEntries(Object.entries(raw).map(([k, v]) => [normId(k), v])))
+    .catch((err) => { setsPromise = null; throw err; });
+  return setsPromise;
+}
+
+function typeBadgeWith(t, suffix) {
+  if (!t) return '';
+  const [ko, color, fg] = TYPES[t] || [t, '#999'];
+  return `<span class="type${fg ? ' light' : ''}" style="--tc:${color};${fg ? `--tf:${fg}` : ''}">${ko}${suffix}</span>`;
+}
+// .map(typeBadge)로 쓰면 두 번째 인자로 인덱스가 들어오므로 접미사 없는 버전을 따로 둔다
+const typeBadge = (t) => typeBadgeWith(t, '');
+
+/* ---------- 타입 상성 ---------- */
+
+const effectiveness = (atk, defTypes) => defTypes.reduce((m, t) => m * (TYPE_CHART[atk][t] ?? 1), 1);
+
+function defenseGroups(types) {
+  const groups = { 4: [], 2: [], 0.5: [], 0.25: [], 0: [] };
+  for (const atk of Object.keys(TYPES)) {
+    const m = effectiveness(atk, types);
+    if (m in groups) groups[m].push(atk);
+  }
+  return groups;
+}
+
+function weaknessBadges(types) {
+  const g = defenseGroups(types);
+  const list = [...g[4].map((t) => typeBadgeWith(t, ' ×4')), ...g[2].map(typeBadge)];
+  return list.length ? list.join('') : '<span class="muted">없음</span>';
+}
+
+function matchupHTML(types) {
+  const g = defenseGroups(types);
+  const row = (label, list, cls) => (list.length
+    ? `<div class="mu-row"><span class="mu-label ${cls}">${label}</span><div class="types">${list.map(typeBadge).join('')}</div></div>`
+    : '');
+  const offense = types.map((t) => {
+    const good = Object.keys(TYPES).filter((d) => TYPE_CHART[t][d] === 2);
+    return `<div class="mu-row"><span class="mu-label">${typeBadge(t)}</span><div class="types">${
+      good.length ? good.map(typeBadge).join('') : '<span class="muted">효과가 굉장한 타입이 없어요</span>'}</div></div>`;
+  }).join('');
+  return `
+    <div class="matchup">
+      <div class="mu-box">
+        <h4>받는 피해</h4>
+        ${row('4배', g[4], 'weak')}${row('2배', g[2], 'weak')}${row('½배', g[0.5], 'resist')}${row('¼배', g[0.25], 'resist')}${row('무효', g[0], 'immune')}
+      </div>
+      <div class="mu-box">
+        <h4>자속 기술로 잘 때리는 타입</h4>
+        ${offense}
+      </div>
+    </div>
+    <p class="rec-note">특성(예: 부유)이나 테라스탈에 따른 변화는 반영하지 않았어요.</p>`;
+}
+
+/* ---------- 목록 ---------- */
+
+function renderFilters() {
+  const gens = ['전체', ...GENS.map((_, i) => `${i + 1}세대`)];
+  $('#gens').innerHTML = gens.map((label, i) =>
+    `<button class="chip" data-gen="${i}" aria-pressed="${i === state.gen}">${label}</button>`).join('');
+  $('#types').innerHTML = Object.entries(TYPES).map(([key, [ko, color, fg]]) =>
+    `<button class="chip type-chip" data-type="${key}" style="--tc:${color};${fg ? `--tf:${fg}` : ''}" aria-pressed="false">${ko}</button>`).join('');
+}
+
+// 목록 카드: 원래 포켓몬 바로 뒤에 그 포켓몬의 리전폼이 온다 (base = 도감 번호)
+function renderGrid() {
+  const formsByBase = {};
+  state.forms.forEach((f) => (formsByBase[f.base] ||= []).push(f));
+  state.entries = state.list.flatMap((p) => [{ ...p, base: p.id }, ...(formsByBase[p.id] || [])]);
+
+  grid.innerHTML = state.entries.map((p) => `
+    <button class="card${p.region ? ' form-card' : ''}" data-id="${p.base}" style="--tc:${TYPES[p.types[0]]?.[1] || '#999'}">
+      <span class="num">No.${pad(p.base)}${p.region ? `<span class="region-tag" style="--rc:${REGIONS[p.region][1]}">${REGIONS[p.region][0]}</span>` : ''}</span>
+      <span class="art"><img src="${art(p.id)}" alt="" loading="lazy" decoding="async"></span>
+      <span class="name">${esc(p.ko || p.en)}</span>
+      <span class="en">${esc(p.en)}</span>
+      <span class="types">${p.types.map(typeBadge).join('')}</span>
+    </button>`).join('');
+  state.cards = [...grid.children];
+}
+
+function applyFilter() {
+  const raw = state.query.trim().toLowerCase();
+  const q = raw.replace(/^(#|no\.?)\s*/, '');
+  const num = /^\d+$/.test(q) ? Number(q) : null;
+  const [from, to] = state.gen ? GENS[state.gen - 1] : [1, TOTAL];
+
+  // visible은 상세 화면의 이전/다음 이동에 쓰는 도감 번호 목록 (리전폼만 보여도 원래 번호로 들어간다)
+  state.visible = [];
+  let shown = 0;
+  state.entries.forEach((p, i) => {
+    let ok = p.base >= from && p.base <= to && (!state.type || p.types.includes(state.type));
+    if (ok && q) ok = num !== null ? p.base === num : p.ko.includes(q) || p.en.toLowerCase().includes(q);
+    state.cards[i].hidden = !ok;
+    if (!ok) return;
+    shown++;
+    if (state.visible[state.visible.length - 1] !== p.base) state.visible.push(p.base);
+  });
+
+  $('#count').textContent = `${shown}마리`;
+  $('#reset').hidden = !(raw || state.gen || state.type);
+  if (state.visible.length) {
+    statusBox.hidden = true;
+  } else {
+    statusBox.hidden = false;
+    statusBox.innerHTML = `<div class="pokeball" aria-hidden="true"></div><p>조건에 맞는 포켓몬이 없어요.</p>`;
+  }
+}
+
+/* ---------- 상세 ---------- */
+
+function getDetail(id) {
+  if (details.has(id)) return details.get(id);
+  const promise = (async () => {
+    const [pk, sp] = await Promise.all([
+      getJSON(`${API}/pokemon/${id}`),
+      getJSON(`${API}/pokemon-species/${id}`),
+      loadMoveData(),
+      loadMachines().catch((err) => console.error(err)), // 번호 없이도 목록은 보여줄 수 있다
+    ]);
+    const gimmickRefs = sp.varieties.map((v) => v.pokemon).filter((p) => gimmickKind(p.name));
+    const regionalRefs = sp.varieties.map((v) => v.pokemon).filter((p) => !gimmickKind(p.name) && regionOf(p.name));
+    const [abilities, chain, gimmicks, regionals] = await Promise.all([
+      Promise.all(pk.abilities.map(async (a) => {
+        const ab = await getJSON(a.ability.url);
+        const ko = ab.names.find((n) => n.language.name === 'ko');
+        return { name: ko ? ko.name : a.ability.name, hidden: a.is_hidden, desc: latestText(ab.flavor_text_entries, 'flavor_text') };
+      })),
+      sp.evolution_chain ? getJSON(sp.evolution_chain.url) : null,
+      Promise.all(gimmickRefs.map((ref) => loadGimmick(ref, nameOf(id), sp.name))),
+      Promise.all(regionalRefs.map((ref) => loadRegional(ref, nameOf(id)))),
+    ]);
+
+    // 게임마다 진화 방법이 다를 수 있어서, 기본(is_default) 방법이나 가장 최근 방법 하나만 보여준다.
+    // 리전폼이 관련된 진화(피카츄 → 알로라 라이츄, 가라르 나옹 → 나이킹 등)는 일반 진화와 나눠서 모은다.
+    const stages = [], methods = {}, regionalEvo = [];
+    const pick = (list) => list.find((x) => x.is_default) || list[list.length - 1];
+    const regionalName = (f) => (f && regionOf(f.name) ? f.name : null);
+    if (chain) {
+      (function walk(node, depth, parent) {
+        const sid = idFromUrl(node.species.url);
+        (stages[depth] ||= []).push(sid);
+        const ds = node.evolution_details;
+        const normal = ds.filter((x) => !x.region && !regionalName(x.required_pokemon_form) && !regionalName(x.evolved_pokemon_form));
+        const regionOnly = ds.filter((x) => regionalName(x.required_pokemon_form) && !regionalName(x.evolved_pokemon_form));
+        if (normal.length) methods[sid] = { m: pick(normal) };
+        else if (regionOnly.length) methods[sid] = { m: pick(regionOnly), from: regionalName(pick(regionOnly).required_pokemon_form), parent };
+        else if (ds.length) methods[sid] = { m: pick(ds) };
+
+        // 결과 모습(리전폼이 아니면 종)별로 하나씩
+        const groups = {};
+        for (const x of ds) {
+          const from = regionalName(x.required_pokemon_form), to = regionalName(x.evolved_pokemon_form);
+          if (from || to) (groups[to || `species:${sid}`] ||= []).push(x);
+        }
+        for (const list of Object.values(groups)) {
+          const m = pick(list);
+          regionalEvo.push({ m, sid, parent, from: regionalName(m.required_pokemon_form), to: regionalName(m.evolved_pokemon_form) });
+        }
+        node.evolves_to.forEach((n) => walk(n, depth + 1, sid));
+      })(chain.chain, 0, null);
+    }
+
+    const formKo = (name, sid) => `${REGIONS[regionOf(name)][0]} ${nameOf(sid)}`;
+    const evoText = {};
+    await Promise.all(Object.entries(methods).map(async ([sid, { m, from, parent }]) => {
+      const cond = await evoCondition(m);
+      evoText[sid] = from ? `${formKo(from, parent)}에서 · ${cond}` : cond;
+    }));
+
+    // 리전폼 카드에 붙일 진화 설명 (모습 이름 → 문장들), 진화 칸에 붙일 리전폼 진화 조건 (모습 이름 → 조건)
+    const fromLines = {}, toLines = {}, formEvoText = {};
+    await Promise.all(regionalEvo.map(async ({ m, sid, parent, from, to }) => {
+      const cond = await evoCondition(m);
+      if (to) {
+        (fromLines[to] ||= []).push(`${from ? formKo(from, parent) : nameOf(parent)}에서 진화 · ${cond}`);
+        formEvoText[to] = from ? `${formKo(from, parent)}에서 · ${cond}` : cond;
+      }
+      if (from) (toLines[from] ||= []).push(`${withRo(to ? formKo(to, sid) : nameOf(sid))} 진화 · ${cond}`);
+    }));
+    regionals.forEach((r) => { r.how = [...(fromLines[r.key] || []), ...(toLines[r.key] || [])].join('\n'); });
+
+    return {
+      height: pk.height / 10,
+      weight: pk.weight / 10,
+      genderRate: sp.gender_rate,
+      flavor: latestText(sp.flavor_text_entries, 'flavor_text'),
+      stats: pk.stats.map((s) => ({ key: s.stat.name, value: s.base_stat })),
+      abilities,
+      stages: stages.map((ids) => ids.filter((sid) => sid <= TOTAL)).filter((ids) => ids.length),
+      evoText,
+      formEvoText,
+      gimmicks,
+      regionals,
+      moves: pk.moves.map((m) => ({
+        id: idFromUrl(m.move.url),
+        slug: m.move.name,
+        learn: m.version_group_details.map((v) => ({ vg: v.version_group.name, method: v.move_learn_method.name, level: v.level_learned_at })),
+      })),
+    };
+  })();
+  details.set(id, promise);
+  promise.catch(() => details.delete(id));
+  return promise;
+}
+
+const TIME_KO = { day: '낮', night: '밤', dusk: '황혼', 'full-moon': '보름달' };
+const REGION_KO = {
+  kanto: '관동', johto: '성도', hoenn: '호연', sinnoh: '신오', unova: '하나',
+  kalos: '칼로스', alola: '알로라', galar: '가라르', hisui: '히스이', paldea: '팔데아',
+};
+
+// 도구·기술·장소의 한국어 이름 (여러 포켓몬이 같은 도구를 쓰므로 URL 단위로 캐시)
+const resourceNames = new Map();
+function koName(res) {
+  if (!res) return Promise.resolve(null);
+  if (!resourceNames.has(res.url)) {
+    resourceNames.set(res.url, getJSON(res.url)
+      .then((r) => r.names.find((n) => n.language.name === 'ko')?.name || null)
+      .catch(() => null));
+  }
+  return resourceNames.get(res.url);
+}
+
+async function evoCondition(m) {
+  const [item, held, move, used, place] = await Promise.all(
+    [m.item, m.held_item, m.known_move, m.used_move, m.location].map(koName));
+  const fallback = (res, ko) => ko || res.name.replace(/-/g, ' ');
+  const typeKo = (res) => TYPES[res.name]?.[0] || res.name;
+  const usedMove = m.used_move ? fallback(m.used_move, used) : '기술';
+  const count = m.min_move_count || 20;
+
+  const parts = [];
+  if (m.region) parts.push(`${REGION_KO[m.region.name] || m.region.name} 지방`);
+  if (m.gender === 1) parts.push('암컷');
+  if (m.gender === 2) parts.push('수컷');
+  if (m.min_happiness) parts.push(`친밀도 ${m.min_happiness} 이상`);
+  if (m.min_affection) parts.push(`애정 ${m.min_affection}단계 이상`);
+  if (m.min_beauty) parts.push(`아름다움 ${m.min_beauty} 이상`);
+  if (m.known_move) parts.push(`${fallback(m.known_move, move)} 배운 상태`);
+  if (m.known_move_type) parts.push(`${typeKo(m.known_move_type)} 타입 기술 배운 상태`);
+  if (m.party_species) parts.push(`파티에 ${nameOf(idFromUrl(m.party_species.url))}`);
+  if (m.party_type) parts.push(`파티에 ${typeKo(m.party_type)} 타입`);
+  if (m.relative_physical_stats != null) parts.push(['공격 < 방어', '공격 = 방어', '공격 > 방어'][m.relative_physical_stats + 1]);
+  if (m.time_of_day) parts.push(TIME_KO[m.time_of_day] || m.time_of_day);
+  if (m.needs_overworld_rain) parts.push('비 오는 날');
+  if (m.turn_upside_down) parts.push('기기를 거꾸로 들고');
+  if (m.near_special_rock) parts.push('특수한 바위 근처');
+  else if (m.location && m.trigger?.name !== 'take-damage') parts.push(place ? `${place}에서` : '특정 장소에서');
+  if (m.needs_multiplayer) parts.push('유니온 서클에서');
+  if (m.allowed_natures?.length) parts.push('성격에 따라 모습이 달라짐');
+  if (m.min_steps) parts.push(`${m.min_steps}걸음 걷기`);
+
+  const actions = {
+    'level-up': m.min_level ? `Lv.${m.min_level}` : '레벨업',
+    'in-battle-level-up': m.min_level ? `배틀 중 Lv.${m.min_level}` : '배틀 중 레벨업',
+    'use-item': m.item ? `${fallback(m.item, item)} 사용` : '도구 사용',
+    trade: m.trade_species ? `${nameOf(idFromUrl(m.trade_species.url))}와(과) 통신교환` : '통신교환',
+    shed: '진화할 때 빈 자리와 몬스터볼 필요',
+    spin: '빙글빙글 돌기',
+    'tower-of-darkness': '악의 탑 수련',
+    'tower-of-waters': '물의 탑 수련',
+    'three-critical-hits': '한 배틀에서 급소 3번',
+    'take-damage': `데미지 ${m.min_damage_taken || 49} 이상 받은 채 바위 아치 지나가기`,
+    'agile-style-move': `${usedMove} 속공으로 ${count}번 사용`,
+    'strong-style-move': `${usedMove} 강공으로 ${count}번 사용`,
+    'recoil-damage': `반동 데미지 ${m.min_damage_taken || 294} 누적`,
+    'use-move': `${usedMove} ${count}번 사용`,
+    'three-defeated-bisharp': `대장의징표를 지닌 ${nameOf(625)} 3마리 쓰러뜨리기`,
+    'gimmighoul-coins': '코인 999개 모으기',
+    'meltan-candies': `${nameOf(808)} 사탕 400개 (포켓몬 GO)`,
+  };
+  const heldText = m.held_item ? `${fallback(m.held_item, held)} 지니고 ` : '';
+  parts.push(heldText + (actions[m.trigger?.name] || '특수한 조건'));
+  return parts.join(' · ');
+}
+
+function statColor(v) {
+  if (v < 50) return '#f34444';
+  if (v < 80) return '#ff8c1a';
+  if (v < 100) return '#f5c518';
+  if (v < 120) return '#9bd318';
+  if (v < 150) return '#23c35e';
+  return '#00bfb3';
+}
+
+function genderText(rate) {
+  if (rate < 0) return '무성';
+  const female = rate * 12.5;
+  return `♂ ${100 - female}% · ♀ ${female}%`;
+}
+
+// 진화 칸: 단계마다 원래 모습 뒤에 리전폼을 같이 그린다 (달마 모드는 배틀 중 모습이라 뺀다)
+function evoHTML(d, current) {
+  if (d.stages.length < 2) return '<p class="muted">진화하지 않는 포켓몬이에요.</p>';
+  const mon = ({ sid, form }) => {
+    const text = form ? d.formEvoText[form.name] : d.evoText[sid];
+    return `
+    <button class="evo-mon${!form && sid === current ? ' current' : ''}${form ? ' regional' : ''}" data-goto="${sid}"${
+      form ? ` data-form style="--rc:${REGIONS[form.region][1]}"` : ''}>
+      <img src="${art(form ? form.id : sid)}" alt="" loading="lazy">
+      <span>${esc(form ? form.ko : nameOf(sid))}</span>
+      ${text ? `<small class="evo-cond">${esc(text)}</small>` : ''}
+    </button>`;
+  };
+  const stages = d.stages.map((ids) => ids.flatMap((sid) => [
+    { sid },
+    ...state.forms.filter((f) => f.base === sid && !f.name.endsWith('-zen')).map((form) => ({ sid, form })),
+  ]));
+  return `<div class="evo">${stages
+    .map((mons) => `<div class="evo-stage${mons.length > 2 ? ' many' : ''}">${mons.map(mon).join('')}</div>`)
+    .join('<span class="evo-arrow" aria-hidden="true">›</span>')}</div>`;
+}
+
+/* ---------- 기술 목록 ---------- */
+
+function moveInfo(m) {
+  const mv = MOVES[m.id] || {};
+  return {
+    name: mv.ko || m.slug.replace(/-/g, ' '), slug: m.slug, type: mv.type,
+    power: mv.power || 0, acc: mv.acc || 0, pp: mv.pp || 0, cls: mv.cls || 0,
+  };
+}
+
+function clsBadge(cls) {
+  const c = MOVE_CLASS[cls];
+  return c ? `<span class="cls" style="--cc:${c[1]}">${c[0]}</span>` : '';
+}
+
+function versionGroups(d) {
+  const counts = {};
+  d.moves.forEach((m) => m.learn.forEach((l) => { counts[l.vg] = (counts[l.vg] || 0) + 1; }));
+  return counts;
+}
+
+function defaultVG(d) {
+  const counts = versionGroups(d);
+  return VG_PREFERRED.find((v) => counts[v]) || Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || null;
+}
+
+// TM → HM → TR 순, 같은 종류 안에서는 번호 순. 번호를 모르는 기술은 맨 뒤로
+const machineOrder = (tm) => (tm ? ['TM', 'HM', 'TR'].indexOf(tm.slice(0, 2)) * 1000 + Number(tm.slice(2)) : Infinity);
+
+function moveRows(d, vg, method) {
+  const rows = [];
+  for (const m of d.moves) {
+    for (const l of m.learn) {
+      if (l.vg !== vg || l.method !== method) continue;
+      rows.push({ ...moveInfo(m), level: l.level, tm: method === 'machine' ? machineLabel(vg, m.id) : '' });
+    }
+  }
+  const byName = (a, b) => a.name.localeCompare(b.name, 'ko');
+  if (method === 'level-up') return rows.sort((a, b) => a.level - b.level || byName(a, b));
+  if (method === 'machine') return rows.sort((a, b) => machineOrder(a.tm) - machineOrder(b.tm) || byName(a, b));
+  return rows.sort(byName);
+}
+
+function movesSectionHTML(d) {
+  const vgs = Object.keys(versionGroups(d)).sort((a, b) => VG_ORDER.indexOf(b) - VG_ORDER.indexOf(a));
+  if (!vgs.length) return '<p class="muted">기술 정보가 없어요.</p>';
+  const methods = LEARN_METHODS
+    .map(([key, label]) => ({ key, label, rows: moveRows(d, state.moveVG, key) }))
+    .filter((m) => m.rows.length);
+  if (!methods.some((m) => m.key === state.moveMethod)) state.moveMethod = methods[0]?.key;
+  const current = methods.find((m) => m.key === state.moveMethod);
+  const isLevel = state.moveMethod === 'level-up';
+  const isMachine = state.moveMethod === 'machine';
+
+  return `
+    <div class="move-tools">
+      <select id="vg-select" aria-label="게임 선택">
+        ${vgs.map((v) => `<option value="${v}"${v === state.moveVG ? ' selected' : ''}>${esc(VG_KO[v] || v)}</option>`).join('')}
+      </select>
+      <div class="chips small">
+        ${methods.map((m) => `<button class="chip" data-method="${m.key}" aria-pressed="${m.key === state.moveMethod}">${m.label}<span class="n">${m.rows.length}</span></button>`).join('')}
+      </div>
+    </div>
+    ${current ? `
+    <div class="table-wrap">
+      <table class="moves">
+        <thead><tr>${isLevel ? '<th class="r">Lv.</th>' : ''}${isMachine ? '<th>번호</th>' : ''}<th>기술</th><th>타입</th><th>분류</th><th class="r">위력</th><th class="r">명중</th><th class="r">PP</th></tr></thead>
+        <tbody>
+          ${current.rows.map((r) => `<tr>
+            ${isLevel ? `<td class="r">${r.level === 0 ? '진화' : r.level}</td>` : ''}
+            ${isMachine ? `<td class="tm">${r.tm || '—'}</td>` : ''}
+            <td class="mname">${esc(r.name)}</td>
+            <td>${typeBadge(r.type)}</td>
+            <td>${clsBadge(r.cls)}</td>
+            <td class="r">${r.power || '—'}</td>
+            <td class="r">${r.acc || '—'}</td>
+            <td class="r">${r.pp || '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : '<p class="muted">이 게임에서 배우는 기술 정보가 없어요.</p>'}`;
+}
+
+function renderMoves() {
+  const box = $('#d-moves');
+  if (box && state.detail) box.innerHTML = movesSectionHTML(state.detail);
+}
+
+/* ---------- 추천 기술 배치 ---------- */
+
+function natureText(name) {
+  const i = NATURES.indexOf(name);
+  if (i < 0) return name;
+  const up = Math.floor(i / 5), down = i % 5;
+  return up === down ? `${NATURES_KO[i]} (보정 없음)` : `${NATURES_KO[i]} (${NATURE_STATS[up]}↑ ${NATURE_STATS[down]}↓)`;
+}
+
+function formatLabel(f) {
+  if (FORMAT_KO[f]) return FORMAT_KO[f];
+  if (f.startsWith('vgc')) return `VGC ${f.slice(3)}`;
+  return f.toUpperCase();
+}
+
+function sortFormats(formats) {
+  const rank = (f) => {
+    const i = FORMAT_ORDER.indexOf(f);
+    return i >= 0 ? i : f.startsWith('vgc') ? FORMAT_ORDER.length : FORMAT_ORDER.length + 1;
+  };
+  return formats.sort((a, b) => rank(a) - rank(b));
+}
+
+// 도구·특성의 영어 이름을 PokeAPI에서 한국어로 바꾼다 (못 찾으면 영어 그대로)
+async function translate(kind, en) {
+  return (await koName({ url: `${API}/${kind}/${slugify(en)}`, name: en })) || en;
+}
+
+async function setCardHTML(name, s) {
+  const [items, abilities] = await Promise.all([
+    Promise.all(asList(s.item).map((n) => translate('item', n))),
+    Promise.all(asList(s.ability).map((n) => translate('ability', n))),
+  ]);
+  const moveTag = (en) => {
+    const mv = MOVES_BY_NORM[normId(en)];
+    const t = mv && TYPES[mv.type];
+    return `<span class="set-move">${t ? `<span class="tdot" style="--tc:${t[1]}" title="${t[0]}"></span>` : ''}${esc(mv?.ko || en)}</span>`;
+  };
+  const evs = asList(s.evs)[0];
+  const tera = asList(s.teratypes).map((t) => TYPES[t.toLowerCase()]?.[0] || (t === 'Stellar' ? '스텔라' : t));
+  const meta = [
+    ['도구', items.join(' / ')],
+    ['특성', abilities.join(' / ')],
+    ['성격', asList(s.nature).map(natureText).join(' / ')],
+    ['노력치', evs ? Object.entries(evs).map(([k, v]) => `${EV_KO[k] || k} ${v}`).join(' · ') : ''],
+    ['테라스탈', tera.join(' / ')],
+  ].filter(([, v]) => v);
+
+  return `
+    <div class="set">
+      <div class="set-name">${esc(name)}</div>
+      <ol class="set-moves">
+        ${s.moves.map((slot) => `<li>${asList(slot).map(moveTag).join('<i>또는</i>')}</li>`).join('')}
+      </ol>
+      <dl class="set-meta">${meta.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+    </div>`;
+}
+
+async function renderRecSets(id) {
+  const fmt = state.recFormat;
+  document.querySelectorAll('#d-rec [data-format]').forEach((c) => c.setAttribute('aria-pressed', c.dataset.format === fmt));
+  const cards = await Promise.all(Object.entries(state.recSets[fmt]).map(([n, s]) => setCardHTML(n, s)));
+  const box = $('#rec-sets');
+  if (box && state.current === id && state.recFormat === fmt) box.innerHTML = cards.join('');
+}
+
+// 대전 데이터에 없는 포켓몬은 종족값과 배울 수 있는 기술로 공격 기술 4개를 고른다
+function autoRecommend(id, d) {
+  const vg = defaultVG(d);
+  const stat = Object.fromEntries(d.stats.map((s) => [s.key, s.value]));
+  const atk = stat.attack, spa = stat['special-attack'];
+  const best = Math.max(atk, spa);
+  const ownTypes = state.list[id - 1].types;
+  // 공격과 특공 차이가 크면 더 높은 쪽 분류의 기술만 쓴다
+  const mixed = Math.min(atk, spa) / best >= 0.85;
+  const mainCls = atk >= spa ? 2 : 3;
+
+  const candidates = new Map();
+  for (const m of d.moves) {
+    if (!m.learn.some((l) => l.vg === vg && LEARN_METHODS.some(([k]) => k === l.method))) continue;
+    const mv = moveInfo(m);
+    if (!mv.power || mv.cls === 1 || !mv.type || AUTO_EXCLUDE.has(mv.slug)) continue;
+    if (!mixed && mv.cls !== mainCls) continue;
+    const ratio = (mv.cls === 2 ? atk : spa) / best;
+    const score = Math.min(mv.power, 150) * (mv.acc || 100) / 100 * (ownTypes.includes(mv.type) ? 1.5 : 1) * ratio * ratio;
+    candidates.set(mv.slug, { ...mv, score });
+  }
+  const sorted = [...candidates.values()].sort((a, b) => b.score - a.score);
+
+  // 자기 타입 기술(자속)을 먼저 넣고, 나머지는 겹치지 않는 타입으로 채운다
+  const picked = [], used = new Set();
+  for (const t of ownTypes) {
+    const mv = sorted.find((m) => m.type === t);
+    if (mv) { picked.push(mv); used.add(t); }
+  }
+  for (const mv of sorted) {
+    if (picked.length >= 4) break;
+    if (!used.has(mv.type)) { picked.push(mv); used.add(mv.type); }
+  }
+  return { picked: picked.slice(0, 4), atk, spa, vg };
+}
+
+function autoRecHTML(id, d) {
+  const { picked, atk, spa, vg } = autoRecommend(id, d);
+  if (!picked.length) return '<p class="muted">추천할 공격 기술이 없어요.</p>';
+  const style = Math.min(atk, spa) / Math.max(atk, spa) >= 0.85 ? `혼합형 (공격 ${atk} · 특공 ${spa})`
+    : atk > spa ? `물리형 (공격 ${atk} > 특공 ${spa})` : `특수형 (특공 ${spa} > 공격 ${atk})`;
+  return `
+    <p class="rec-note">대전 데이터에 없는 포켓몬이라 종족값과 ${esc(VG_KO[vg] || vg)}에서 배우는 기술의 위력·명중률·자속 보정으로 자동으로 골랐어요. 참고용으로만 봐주세요.</p>
+    <div class="sets"><div class="set">
+      <div class="set-name">자동 추천 · ${style}</div>
+      <ol class="set-moves">
+        ${picked.map((m) => `<li><span class="set-move">${typeBadge(m.type)} ${esc(m.name)}</span><span class="set-extra">${clsBadge(m.cls)} 위력 ${m.power}</span></li>`).join('')}
+      </ol>
+    </div></div>`;
+}
+
+async function fillRecommend(id, d) {
+  let sets = null;
+  try {
+    sets = (await loadSets())[SHOWDOWN_ID[id] || normId(state.list[id - 1].en)];
+  } catch (err) {
+    console.error(err);
+  }
+  const box = $('#d-rec');
+  if (state.current !== id || !box) return;
+  if (!sets) {
+    box.innerHTML = autoRecHTML(id, d);
+    return;
+  }
+  const formats = sortFormats(Object.keys(sets));
+  state.recSets = sets;
+  state.recFormat = formats[0];
+  const slug = slugify(state.list[id - 1].en);
+  box.innerHTML = `
+    <p class="rec-note">포켓몬 대전 커뮤니티 <a href="https://www.smogon.com/dex/sv/pokemon/${slug}/" target="_blank" rel="noopener">Smogon</a>이 정리한 9세대(스칼렛·바이올렛) 대전용 세트예요. 룰(티어)마다 추천이 달라요.</p>
+    <div class="chips small">
+      ${formats.map((f) => `<button class="chip" data-format="${f}" aria-pressed="${f === state.recFormat}">${esc(formatLabel(f))}</button>`).join('')}
+    </div>
+    <div class="sets" id="rec-sets"><div class="loading-row"><div class="pokeball wobble" aria-hidden="true"></div>불러오는 중…</div></div>`;
+  renderRecSets(id);
+}
+
+// 리전폼·진화 기믹 카드 (능력치는 원래 모습과 비교해서 보여준다)
+function formCardsHTML(forms, d, id) {
+  const base = d.stats;
+  return `
+    <div class="gimmicks">
+      ${forms.map((g) => {
+        const same = g.stats.every((s, i) => s.value === base[i]?.value);
+        const total = g.stats.reduce((sum, s) => sum + s.value, 0);
+        const totalDiff = total - base.reduce((sum, s) => sum + s.value, 0);
+        const diffTag = (diff) => (diff ? `<em class="${diff > 0 ? 'up' : 'down'}">${diff > 0 ? '+' : ''}${diff}</em>` : '');
+        return `
+          <div class="gimmick" style="--gc:${g.color}">
+            <div class="g-art"><img src="${g.img || art(id)}" alt="" loading="lazy"></div>
+            <div>
+              <span class="g-label">${esc(g.label)}</span>
+              <div class="g-name">${esc(g.name)}</div>
+              <div class="types">${g.types.map(typeBadge).join('')}</div>
+              ${g.how ? `<p class="g-how">${esc(g.how)}</p>` : ''}
+              ${g.ability ? `<div class="g-row"><span>특성</span><b>${esc(g.ability)}</b></div>` : ''}
+              <div class="g-row g-weak"><span>약점</span><span class="types">${weaknessBadges(g.types)}</span></div>
+              ${same
+                ? '<p class="g-note">능력치는 원래 모습과 같아요.</p>'
+                : `<div class="g-stats">
+                    ${g.stats.map((s, i) => `
+                      <div class="g-stat">
+                        <span>${STAT_KO[s.key] || s.key}</span><b>${s.value}</b>
+                        <div class="bar"><i style="--w:${Math.min(100, s.value / 255 * 100)}%;--c:${statColor(s.value)}"></i></div>
+                        ${diffTag(s.value - (base[i]?.value || 0)) || '<em></em>'}
+                      </div>`).join('')}
+                    <div class="g-stat total"><span>합계</span><b>${total}</b><span></span>${diffTag(totalDiff) || '<em></em>'}</div>
+                  </div>`}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+const sectionTitle = (text) => `<h3><span class="pokeball" aria-hidden="true"></span>${text}</h3>`;
+
+function detailHTML(d, id) {
+  const total = d.stats.reduce((sum, s) => sum + s.value, 0);
+  return `
+    <p class="flavor">${esc(d.flavor) || '아직 도감 설명이 없어요.'}</p>
+    <div class="info">
+      <div><span>키</span><b>${d.height} m</b></div>
+      <div><span>몸무게</span><b>${d.weight} kg</b></div>
+      <div><span>성비</span><b>${genderText(d.genderRate)}</b></div>
+    </div>
+    <section class="d-section">
+      ${sectionTitle('타입 상성')}
+      ${matchupHTML(state.list[id - 1].types)}
+    </section>
+    <section class="d-section">
+      ${sectionTitle('특성')}
+      ${d.abilities.map((a) => `
+        <div class="ability">
+          <b>${esc(a.name)}</b>${a.hidden ? '<em>숨겨진 특성</em>' : ''}
+          ${a.desc ? `<p>${esc(a.desc)}</p>` : ''}
+        </div>`).join('')}
+    </section>
+    <section class="d-section">
+      ${sectionTitle('종족값')}
+      ${d.stats.map((s) => `
+        <div class="stat">
+          <span>${STAT_KO[s.key] || s.key}</span><b>${s.value}</b>
+          <div class="bar"><i style="--w:${Math.min(100, s.value / 255 * 100)}%;--c:${statColor(s.value)}"></i></div>
+        </div>`).join('')}
+      <div class="stat total"><span>합계</span><b>${total}</b><span></span></div>
+    </section>
+    <section class="d-section">
+      ${sectionTitle('진화')}
+      ${evoHTML(d, id)}
+    </section>
+    ${d.regionals.length ? `
+    <section class="d-section" id="d-regionals">
+      ${sectionTitle('리전폼')}
+      <p class="rec-note">다른 지방에서 환경에 맞게 모습과 타입이 달라진 포켓몬이에요.</p>
+      ${formCardsHTML(d.regionals, d, id)}
+    </section>` : ''}
+    ${d.gimmicks.length ? `
+    <section class="d-section">
+      ${sectionTitle('진화 기믹')}
+      <p class="rec-note">메가진화는 X·Y부터 울트라썬·울트라문까지와 레전드 Z-A에서, 거다이맥스는 소드·실드에서 쓸 수 있어요.</p>
+      ${formCardsHTML(d.gimmicks, d, id)}
+    </section>` : ''}
+    <section class="d-section">
+      ${sectionTitle('추천 기술 배치')}
+      <div id="d-rec"><div class="loading-row"><div class="pokeball wobble" aria-hidden="true"></div>대전 데이터를 불러오는 중…</div></div>
+    </section>
+    <section class="d-section">
+      ${sectionTitle('기술 목록')}
+      <div id="d-moves">${movesSectionHTML(d)}</div>
+    </section>`;
+}
+
+function renderDetail(id, rest) {
+  const p = state.list[id - 1];
+  $('#d-num').textContent = `No.${pad(id)}`;
+  $('#d-img').src = art(id, state.shiny);
+  $('#d-img').alt = p.ko || p.en;
+  $('#shiny').setAttribute('aria-pressed', state.shiny);
+
+  const order = state.visible.includes(id) ? state.visible : state.list.map((x) => x.id);
+  const idx = order.indexOf(id);
+  $('#prev').disabled = idx <= 0;
+  $('#next').disabled = idx >= order.length - 1;
+
+  body.innerHTML = `
+    <div class="d-head">
+      <h2 id="d-name">${esc(p.ko || p.en)}</h2>
+      <div class="d-en">${esc(p.en)}</div>
+      ${p.genus ? `<div class="d-genus">${esc(p.genus)}</div>` : ''}
+      <div class="types">${p.types.map(typeBadge).join('')}</div>
+    </div>
+    ${rest}`;
+}
+
+async function openDetail(id) {
+  const wasOpen = !modal.hidden;
+  if (state.current !== id) state.shiny = false;
+  state.current = id;
+  modal.hidden = false;
+  document.body.classList.add('noscroll');
+  $('#sheet').scrollTop = 0;
+
+  renderDetail(id, `<div class="loading-row"><div class="pokeball wobble" aria-hidden="true"></div>정보를 불러오는 중…</div>`);
+  if (!wasOpen) $('#close').focus();
+
+  try {
+    const d = await getDetail(id);
+    if (state.current === id) {
+      state.detail = d;
+      state.moveVG = defaultVG(d);
+      state.moveMethod = 'level-up';
+      renderDetail(id, detailHTML(d, id));
+      fillRecommend(id, d);
+      if (state.scrollToRegionals) $('#d-regionals')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+    state.scrollToRegionals = false;
+  } catch (err) {
+    console.error(err);
+    state.scrollToRegionals = false;
+    if (state.current === id) {
+      renderDetail(id, `<div class="status"><p>정보를 불러오지 못했어요.</p><button class="primary-btn" data-retry>다시 시도</button></div>`);
+    }
+  }
+}
+
+function hideDetail() {
+  if (modal.hidden) return;
+  const last = state.current;
+  modal.hidden = true;
+  document.body.classList.remove('noscroll');
+  state.current = null;
+  state.pushed = false;
+  const card = grid.querySelector(`.card[data-id="${last}"]:not([hidden])`);
+  if (card) card.focus({ preventScroll: true });
+}
+
+function closeDetail() {
+  if (state.pushed) history.back();
+  else {
+    history.replaceState(null, '', location.pathname + location.search);
+    hideDetail();
+  }
+}
+
+function go(id) {
+  history.replaceState(null, '', `#${id}`);
+  openDetail(id);
+}
+
+function step(dir) {
+  if (state.current == null) return;
+  const order = state.visible.includes(state.current) ? state.visible : state.list.map((x) => x.id);
+  const next = order[order.indexOf(state.current) + dir];
+  if (next) go(next);
+}
+
+function route() {
+  const id = Number(location.hash.slice(1));
+  if (Number.isInteger(id) && id >= 1 && id <= TOTAL && state.list.length) openDetail(id);
+  else hideDetail();
+}
+
+/* ---------- 이벤트 ---------- */
+
+$('#q').addEventListener('input', (e) => { state.query = e.target.value; applyFilter(); });
+
+$('#gens').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-gen]');
+  if (!btn) return;
+  state.gen = Number(btn.dataset.gen);
+  $('#gens').querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', c === btn));
+  applyFilter();
+});
+
+$('#types').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-type]');
+  if (!btn) return;
+  state.type = state.type === btn.dataset.type ? null : btn.dataset.type;
+  $('#types').querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', c.dataset.type === state.type));
+  applyFilter();
+});
+
+$('#reset').addEventListener('click', () => {
+  state.query = ''; state.gen = 0; state.type = null;
+  $('#q').value = '';
+  renderFilters();
+  applyFilter();
+});
+
+grid.addEventListener('click', (e) => {
+  const card = e.target.closest('.card');
+  if (!card) return;
+  state.pushed = true;
+  state.scrollToRegionals = card.classList.contains('form-card');
+  location.hash = card.dataset.id;
+});
+
+modal.addEventListener('click', (e) => {
+  if (e.target.closest('[data-close]')) return closeDetail();
+  const target = e.target.closest('[data-goto]');
+  if (target) {
+    state.scrollToRegionals = target.hasAttribute('data-form');
+    return go(Number(target.dataset.goto));
+  }
+  if (e.target.closest('[data-retry]')) return openDetail(state.current);
+  const method = e.target.closest('[data-method]');
+  if (method) {
+    state.moveMethod = method.dataset.method;
+    return renderMoves();
+  }
+  const format = e.target.closest('[data-format]');
+  if (format) {
+    state.recFormat = format.dataset.format;
+    return renderRecSets(state.current);
+  }
+});
+
+modal.addEventListener('change', (e) => {
+  if (e.target.id !== 'vg-select') return;
+  state.moveVG = e.target.value;
+  renderMoves();
+});
+
+$('#prev').addEventListener('click', () => step(-1));
+$('#next').addEventListener('click', () => step(1));
+$('#shiny').addEventListener('click', () => {
+  state.shiny = !state.shiny;
+  $('#shiny').setAttribute('aria-pressed', state.shiny);
+  $('#d-img').src = art(state.current, state.shiny);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!modal.hidden) {
+    if (e.key === 'Escape') closeDetail();
+    else if (e.key === 'ArrowLeft') step(-1);
+    else if (e.key === 'ArrowRight') step(1);
+  } else if (e.key === '/' && document.activeElement !== $('#q')) {
+    e.preventDefault();
+    $('#q').focus();
+  }
+});
+
+window.addEventListener('hashchange', route);
+
+/* ---------- 시작 ---------- */
+
+async function init() {
+  statusBox.hidden = false;
+  statusBox.innerHTML = `<div class="pokeball wobble" aria-hidden="true"></div><p>도감 데이터를 불러오는 중…</p>`;
+  try {
+    ({ list: state.list, forms: state.forms } = await loadIndex());
+    renderGrid();
+    applyFilter();
+    route();
+  } catch (err) {
+    console.error(err);
+    statusBox.innerHTML = `<div class="pokeball" aria-hidden="true"></div><p>데이터를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p><button class="primary-btn" id="retry">다시 시도</button>`;
+    $('#retry').addEventListener('click', init);
+  }
+}
+
+renderFilters();
+init();
+</script>
+</body>
+</html>
