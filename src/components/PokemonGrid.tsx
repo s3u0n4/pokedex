@@ -15,7 +15,7 @@ const PokemonCard = memo(function PokemonCard({ p, onOpen }: CardProps) {
   return (
     <button
       className={`card${region ? ' form-card' : ''}`}
-      data-id={p.base}
+      data-id={p.id}
       style={cssVars({ '--tc': TYPES[p.types[0]]?.[1] || '#999' })}
       onClick={() => onOpen(p)}
     >

@@ -77,10 +77,11 @@ export function statColor(v: number) {
   return '#00bfb3';
 }
 
+// ["♂ 50%", "♀ 50%"] (화면에서 둘이 따로 줄바꿈되도록 나눠서 돌려준다)
 export function genderText(rate: number) {
-  if (rate < 0) return '무성';
+  if (rate < 0) return ['무성'];
   const female = rate * 12.5;
-  return `♂ ${100 - female}% · ♀ ${female}%`;
+  return [`♂ ${100 - female}%`, `♀ ${female}%`];
 }
 
 export function natureText(name: string) {

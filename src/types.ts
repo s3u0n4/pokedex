@@ -38,6 +38,12 @@ export interface ListEntry {
   region?: Region;
 }
 
+/** 상세 화면 하나 (종이거나 리전폼). 리전폼이면 name·region이 있다 */
+export interface DexEntry extends ListEntry {
+  genus: string;
+  name?: string;
+}
+
 export interface Stat {
   key: string;
   value: number;
@@ -49,7 +55,7 @@ export interface AbilityInfo {
   desc: string;
 }
 
-/** 리전폼·진화 기믹 카드 */
+/** 진화 기믹 카드 */
 export interface FormCardData {
   key: string;
   label: string;
@@ -97,7 +103,6 @@ export interface Detail {
   /** 리전폼 이름(raichu-alola) → 그 모습으로 진화하는 조건 */
   formEvoText: Record<string, string>;
   gimmicks: FormCardData[];
-  regionals: FormCardData[];
   moves: PokemonMove[];
 }
 
@@ -130,10 +135,27 @@ export interface MoveRow extends MoveInfo {
 export interface AutoPick extends MoveInfo {
   type: string;
   score: number;
+  /** 지금 게임에서 배우는 방법 */
+  learn?: MoveLearn | null;
+}
+
+/** 한 게임에서 기술을 배우는 방법 (여러 개일 수 있다). level 0은 진화할 때 */
+export interface MoveLearn {
+  level: number | null;
+  tm: string | null;
+  egg: boolean;
+  tutor: boolean;
+}
+
+/** 추천 도구 (slug는 PokeAPI 도구 이름) */
+export interface ItemSuggestion {
+  slug: string;
+  why: string;
 }
 
 export interface AutoRecommendation {
   picked: AutoPick[];
+  items: ItemSuggestion[];
   atk: number;
   spa: number;
   vg: string | null;
@@ -159,6 +181,8 @@ export type SmogonFormats = Record<string, Record<string, SmogonSet>>;
 export interface SetMove {
   name: string;
   type: string | null;
+  /** null이면 이 게임에서 배울 수 없다, undefined면 모름 */
+  learn?: MoveLearn | null;
 }
 
 export interface SetDescription {

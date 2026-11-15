@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { getDetail } from '../api/detail';
-import { store } from '../lib/store';
+import { REGIONS } from '../lib/constants';
+import { entryOf } from '../lib/store';
 import { art, pad } from '../lib/utils';
 import type { Detail } from '../types';
 import DetailBody from './DetailBody';
-import { LoadingRow, TypeBadges } from './ui';
+import { cssVars, LoadingRow, TypeBadges } from './ui';
 
-/** 상세 화면 안에서 다른 포켓몬으로 이동 (regional이면 리전폼 섹션으로 스크롤) */
-export type GoTo = (id: number | null | undefined, opts?: { regional?: boolean }) => void;
+/** 상세 화면 안에서 다른 포켓몬(도감 번호 또는 리전폼 id)으로 이동 */
+export type GoTo = (id: number | null | undefined) => void;
 
 type LoadResult =
   | { id: number | null; status: 'loading' }
@@ -20,11 +21,11 @@ interface DetailModalProps {
   nextId: number | null;
   onGo: GoTo;
   onClose: () => void;
-  scrollRegionalsRef: { current: boolean };
 }
 
-export default function DetailModal({ id, prevId, nextId, onGo, onClose, scrollRegionalsRef }: DetailModalProps) {
-  const p = store.list[id - 1];
+export default function DetailModal({ id, prevId, nextId, onGo, onClose }: DetailModalProps) {
+  const p = entryOf(id)!;
+  const region = p.region && REGIONS[p.region];
   const [result, setResult] = useState<LoadResult>({ id: null, status: 'loading' });
   const [retry, setRetry] = useState(0);
   const [shinyId, setShinyId] = useState<number | null>(null); // 이로치는 그 포켓몬을 보는 동안만 유지
@@ -49,15 +50,7 @@ export default function DetailModal({ id, prevId, nextId, onGo, onClose, scrollR
     return () => { alive = false; };
   }, [id, retry]);
 
-  // 리전폼 카드나 진화 칸의 리전폼을 눌러서 열었으면 리전폼 섹션으로 내려간다
   const loaded = Boolean(ready) || failed;
-  useEffect(() => {
-    if (!loaded) return;
-    if (ready && scrollRegionalsRef.current) {
-      document.getElementById('d-regionals')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    }
-    scrollRegionalsRef.current = false;
-  }, [loaded, ready, scrollRegionalsRef]);
 
   return (
     <div className="modal">
@@ -69,7 +62,10 @@ export default function DetailModal({ id, prevId, nextId, onGo, onClose, scrollR
               <button className="icon-btn" aria-label="이전 포켓몬" disabled={!prevId} onClick={() => onGo(prevId)}>‹</button>
               <button className="icon-btn" aria-label="다음 포켓몬" disabled={!nextId} onClick={() => onGo(nextId)}>›</button>
             </div>
-            <span className="sheet-num">No.{pad(id)}</span>
+            <span className="sheet-num">
+              No.{pad(p.base)}
+              {region && <span className="region-tag" style={cssVars({ '--rc': region[1] })}>{region[0]}</span>}
+            </span>
             <button className="icon-btn" ref={closeRef} aria-label="닫기" onClick={onClose}>✕</button>
           </div>
           <div className="hero"><img src={art(id, shiny)} alt={p.ko || p.en} /></div>

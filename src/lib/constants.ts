@@ -114,6 +114,9 @@ export const FORMAT_KO: Record<string, string> = {
   doublesou: '더블 OU', nationaldex: '내셔널도감', monotype: '모노타입', '1v1': '1대1', battlestadiumsingles: '배틀스타디움 싱글',
   ubersuu: 'Ubers UU', nationaldexmonotype: '내셔널도감 모노타입', nationaldexuu: '내셔널도감 UU',
   almostanyability: '특성 자유 (AAA)', godlygift: '갓리 기프트', inheritance: '인헤리턴스', balancedhackmons: '밸런스드 해크몬',
+  nationaldexru: '내셔널도감 RU', nationaldexubers: '내셔널도감 Ubers', nationaldexdoubles: '내셔널도감 더블',
+  stabmons: '자속 자유 (STABmons)', partnersincrime: '파트너스 인 크라임', cap: 'CAP (창작 포켓몬)', anythinggoes: '무제한 (AG)',
+  mixandmega: '믹스 앤 메가',
 };
 export const FORMAT_ORDER = ['ou', 'ubers', 'uu', 'ru', 'nu', 'pu', 'zu', 'lc', 'nfe', 'battlestadiumsingles', 'doublesou'];
 // 자동 추천에서 빼는 기술 (반동으로 쉬어야 하거나, 2턴이 걸리거나, 기절하는 등 실전에서 쓰기 어려운 기술)
@@ -123,6 +126,17 @@ export const AUTO_EXCLUDE = new Set(('hyper-beam giga-impact blast-burn frenzy-p
   'fly dig dive bounce phantom-force shadow-force geomancy steel-beam mind-blown final-gambit natural-gift fling ' +
   'spit-up beat-up present snore sky-drop freeze-shock ice-burn dynamax-cannon behemoth-blade behemoth-bash ' +
   'tera-blast tera-starstorm').split(' '));
+// 도구 그림 (PokeAPI/sprites)
+export const ITEM_ART = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items';
+// 그 타입 기술의 위력을 1.2배로 올리는 도구
+export const TYPE_ITEM: Record<string, string> = {
+  normal: 'silk-scarf', fire: 'charcoal', water: 'mystic-water', electric: 'magnet', grass: 'miracle-seed',
+  ice: 'never-melt-ice', fighting: 'black-belt', poison: 'poison-barb', ground: 'soft-sand', flying: 'sharp-beak',
+  psychic: 'twisted-spoon', bug: 'silver-powder', rock: 'hard-stone', ghost: 'spell-tag', dragon: 'dragon-fang',
+  dark: 'black-glasses', steel: 'metal-coat', fairy: 'fairy-feather',
+};
+// 스토리 추천에서 더 빼는 기술 (쓰고 나면 특공이 크게 떨어져서 연달아 싸우기 불편하다)
+export const STORY_EXCLUDE = new Set(['overheat', 'leaf-storm', 'draco-meteor', 'psycho-boost', 'fleur-cannon']);
 export const SHOWDOWN_ID: Record<number, string> = { 29: 'nidoranf', 32: 'nidoranm' };
 
 // 배틀 중 특수 변신 (PokeAPI에서는 포켓몬의 다른 모습(variety)으로 들어 있다)

@@ -28,13 +28,13 @@ export default function Evolution({ d, current, onGo }: { d: Detail; current: nu
           <div className={`evo-stage${mons.length > 2 ? ' many' : ''}`}>
             {mons.map(({ sid, form }) => {
               const text = form ? d.formEvoText[form.name] : d.evoText[sid];
-              const classes = ['evo-mon', !form && sid === current && 'current', form && 'regional'].filter(Boolean).join(' ');
+              const classes = ['evo-mon', (form ? form.id : sid) === current && 'current', form && 'regional'].filter(Boolean).join(' ');
               return (
                 <button
                   key={form ? form.name : sid}
                   className={classes}
                   style={form ? cssVars({ '--rc': REGIONS[form.region][1] }) : undefined}
-                  onClick={() => onGo(sid, { regional: Boolean(form) })}
+                  onClick={() => onGo(form ? form.id : sid)}
                 >
                   <img src={art(form ? form.id : sid)} alt="" loading="lazy" />
                   <span>{form ? form.ko : nameOf(sid)}</span>

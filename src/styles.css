@@ -10,6 +10,10 @@
   --line: #e2dfda;
   --male: #3b82f6;
   --female: #ec4899;
+  --learn-level: #1e7a3c;
+  --learn-tm: #1d5fbf;
+  --learn-egg: #b0570f;
+  --learn-tutor: #7b4fd6;
   --shadow: 0 1px 3px rgba(0,0,0,.06), 0 6px 20px rgba(0,0,0,.06);
   --shadow-hover: 0 14px 30px rgba(0,0,0,.14);
   --watermark-filter: none;
@@ -306,6 +310,8 @@ footer a { color: inherit; }
 .info > div { padding: 10px 8px; border-radius: 14px; background: var(--surface-2); text-align: center; }
 .info span { display: block; font-size: 12px; color: var(--muted); }
 .info b { font-size: 15px; }
+.info .gender-rate { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 8px; }
+.info .gender-rate span { display: inline; font-size: inherit; color: inherit; white-space: nowrap; }
 .genders { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .gender { margin: 0; padding: 14px 10px 10px; border-radius: 16px; background: var(--surface-2); text-align: center; }
 .gender img { width: min(180px, 100%); aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,.15)); }
@@ -409,6 +415,10 @@ footer a { color: inherit; }
 .g-note { margin: 12px 0 0; font-size: 14px; color: var(--muted); }
 .g-weak { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .g-weak .types { margin: 0; }
+.other-forms { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.other-forms .evo-mon { width: 140px; }
+.other-forms .types { justify-content: center; margin-top: 4px; }
+.sheet-num .region-tag { margin-left: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; vertical-align: middle; }
 .evo-mon.regional { border: 2px dashed color-mix(in srgb, var(--rc) 55%, transparent); }
 .evo-mon.regional > span { color: var(--rc); font-weight: 700; }
 
@@ -444,6 +454,38 @@ footer a { color: inherit; }
 .set-move .type { font-size: 11px; padding: 1px 8px; }
 .set-extra { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .tdot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--tc); }
+.learn { display: flex; flex-wrap: wrap; gap: 4px; flex-basis: 100%; }
+.how { white-space: nowrap; padding: 1px 8px; border-radius: 8px; background: var(--surface); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.how.level { color: var(--learn-level); }
+.how.tm { color: var(--learn-tm); }
+.how.egg { color: var(--learn-egg); }
+.how.tutor { color: var(--learn-tutor); }
+.how.none { color: var(--muted); font-weight: 500; }
+.set-moves li.alts { flex-direction: column; align-items: flex-start; }
+.set-moves li.alts .learn { flex-basis: auto; } /* 세로 배치에서 100%는 높이가 돼서 칸이 길게 늘어난다 */
+.learn-plan { padding-top: 8px; border-top: 1px dashed var(--line); }
+.learn-plan div { grid-template-columns: 72px 1fr; }
+.learn-plan dt { white-space: nowrap; }
+.learn-plan dd { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.learn-plan dd span { white-space: nowrap; }
+.learn-plan dd.seq { gap: 2px 0; }
+.learn-plan dd.seq span + span::before { content: '→'; margin: 0 6px; color: var(--muted); }
+.rec-modes { display: inline-flex; gap: 4px; margin-bottom: 10px; padding: 4px; border-radius: 999px; background: var(--surface-2); }
+.rec-mode { padding: 6px 18px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.rec-mode[aria-selected="true"] { background: var(--red); color: #fff; }
+/* 모바일: 탭은 꽉 채워서 누르기 쉽게, 룰 버튼은 여러 줄로 쌓지 않고 옆으로 넘긴다 */
+@media (max-width: 520px) {
+  .rec-modes { display: flex; }
+  .rec-mode { flex: 1; padding: 9px 0; font-size: 15px; }
+  .rec-formats.chips.small { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 0 16px 4px; }
+  .rec-formats .chip { flex: none; }
+}
+.rec-sub { margin: 16px 0 8px; font-size: 14px; }
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; background: var(--surface-2); }
+.item img { flex: none; width: 36px; height: 36px; image-rendering: pixelated; }
+.item b { display: block; font-size: 14px; }
+.item small { display: block; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .set-meta { display: grid; gap: 4px; margin: 10px 0 0; font-size: 13px; }
 .set-meta div { display: grid; grid-template-columns: 58px 1fr; gap: 8px; }
 .set-meta dt { color: var(--muted); }

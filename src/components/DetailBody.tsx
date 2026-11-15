@@ -1,6 +1,7 @@
-import { store } from '../lib/store';
+import { REGIONS } from '../lib/constants';
+import { entryOf, familyOf, nameOf } from '../lib/store';
 import { art, genderText } from '../lib/utils';
-import type { Detail } from '../types';
+import type { DexEntry, Detail } from '../types';
 import type { GoTo } from './DetailModal';
 import Evolution from './Evolution';
 import FormCards from './FormCards';
@@ -9,18 +10,49 @@ import Matchup from './Matchup';
 import MoveList from './MoveList';
 import Recommend from './Recommend';
 import StatBars from './StatBars';
-import { Section } from './ui';
+import { cssVars, Section, TypeBadges } from './ui';
+
+// 원래 모습 ↔ 리전폼 사이를 오가는 버튼
+function OtherForms({ ids, onGo }: { ids: number[]; onGo: GoTo }) {
+  return (
+    <div className="other-forms">
+      {ids.map((fid) => {
+        const e = entryOf(fid);
+        if (!e) return null;
+        const region = e.region && REGIONS[e.region];
+        return (
+          <button
+            key={fid}
+            className={`evo-mon${region ? ' regional' : ''}`}
+            style={region ? cssVars({ '--rc': region[1] }) : undefined}
+            onClick={() => onGo(fid)}
+          >
+            <img src={art(fid)} alt="" loading="lazy" />
+            <span>{e.ko || e.en}</span>
+            <TypeBadges types={e.types} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function flavorOf(e: DexEntry, d: Detail) {
+  if (e.region) return `${REGIONS[e.region][0]} 지방의 환경에 맞게 모습과 타입이 달라진 ${nameOf(e.base)}의 리전폼이에요.`;
+  return d.flavor || '아직 도감 설명이 없어요.';
+}
 
 // 상세 화면 본문. 포켓몬이 바뀌면 key로 새로 만들어서 기술 목록·추천의 선택 상태도 초기화된다.
 export default function DetailBody({ id, d, shiny, onGo }: { id: number; d: Detail; shiny: boolean; onGo: GoTo }) {
-  const p = store.list[id - 1];
+  const p = entryOf(id)!;
+  const others = familyOf(p.base).filter((fid) => fid !== id);
   return (
     <>
-      <p className="flavor">{d.flavor || '아직 도감 설명이 없어요.'}</p>
+      <p className="flavor">{flavorOf(p, d)}</p>
       <div className="info">
         <div><span>키</span><b>{d.height} m</b></div>
         <div><span>몸무게</span><b>{d.weight} kg</b></div>
-        <div><span>성비</span><b>{genderText(d.genderRate)}</b></div>
+        <div><span>성비</span><b className="gender-rate">{genderText(d.genderRate).map((t) => <span key={t}>{t}</span>)}</b></div>
       </div>
 
       {d.genderArt && (
@@ -45,10 +77,9 @@ export default function DetailBody({ id, d, shiny, onGo }: { id: number; d: Deta
 
       <Section title="진화"><Evolution d={d} current={id} onGo={onGo} /></Section>
 
-      {d.regionals.length > 0 && (
-        <Section id="d-regionals" title="리전폼">
-          <p className="rec-note">다른 지방에서 환경에 맞게 모습과 타입이 달라진 포켓몬이에요.</p>
-          <FormCards forms={d.regionals} baseStats={d.stats} fallbackImg={art(id)} />
+      {others.length > 0 && (
+        <Section title={p.region ? '다른 모습' : '리전폼'}>
+          <OtherForms ids={others} onGo={onGo} />
         </Section>
       )}
 

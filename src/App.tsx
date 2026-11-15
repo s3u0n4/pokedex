@@ -6,12 +6,13 @@ import Header from './components/Header';
 import PokemonGrid from './components/PokemonGrid';
 import { Status } from './components/ui';
 import { GENS, TOTAL } from './lib/constants';
+import { entryOf } from './lib/store';
 import type { ListEntry, PokedexIndex } from './types';
 
-// 주소 끝의 #25 같은 해시가 상세 화면을 연다
+// 주소 끝의 #25 같은 해시가 상세 화면을 연다 (리전폼은 #10100 같은 PokeAPI id)
 function hashId() {
   const id = Number(location.hash.slice(1));
-  return Number.isInteger(id) && id >= 1 && id <= TOTAL ? id : null;
+  return Number.isInteger(id) && id >= 1 && entryOf(id) ? id : null;
 }
 
 export default function App() {
@@ -24,7 +25,6 @@ export default function App() {
 
   const currentRef = useRef<number | null>(null);
   const pushedRef = useRef(false);          // 목록에서 열어서 방문 기록이 하나 쌓였는지 (닫을 때 뒤로 가기)
-  const scrollRegionalsRef = useRef(false); // 상세를 연 뒤 리전폼 섹션으로 스크롤할지
   const lastOpenedRef = useRef<number | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   currentRef.current = current;
@@ -74,30 +74,24 @@ export default function App() {
     });
   }, [entries, query, gen, type]);
 
-  // 상세 화면의 이전/다음: 목록에 보이는 순서를 따르고, 목록에 없는 포켓몬이면 도감 번호 순
+  // 상세 화면의 이전/다음: 목록에 보이는 순서를 따르고, 목록에 없는 포켓몬이면 전체 목록 순
   const { prevId, nextId } = useMemo(() => {
-    if (!current || !index) return { prevId: null, nextId: null };
-    const visible = [...new Set(filtered.map((p) => p.base))];
-    const order = visible.includes(current) ? visible : index.list.map((p) => p.id);
+    if (!current) return { prevId: null, nextId: null };
+    const visible = filtered.map((p) => p.id);
+    const order = visible.includes(current) ? visible : entries.map((p) => p.id);
     const i = order.indexOf(current);
     return { prevId: order[i - 1] ?? null, nextId: order[i + 1] ?? null };
-  }, [current, filtered, index]);
+  }, [current, filtered, entries]);
 
   const openFromList = useCallback((entry: ListEntry) => {
     pushedRef.current = true;
-    scrollRegionalsRef.current = Boolean(entry.region);
-    location.hash = String(entry.base);
+    location.hash = String(entry.id);
   }, []);
 
   // 상세 화면 안에서 이동할 때는 방문 기록을 쌓지 않는다
-  const go = useCallback<GoTo>((id, { regional = false } = {}) => {
-    if (!id) return;
+  const go = useCallback<GoTo>((id) => {
+    if (!id || id === currentRef.current) return;
     history.replaceState(null, '', `#${id}`);
-    if (id === currentRef.current) {
-      if (regional) document.getElementById('d-regionals')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      return;
-    }
-    scrollRegionalsRef.current = regional;
     setCurrent(id);
   }, []);
 
@@ -162,7 +156,6 @@ export default function App() {
           nextId={nextId}
           onGo={go}
           onClose={close}
-          scrollRegionalsRef={scrollRegionalsRef}
         />
       )}
     </>

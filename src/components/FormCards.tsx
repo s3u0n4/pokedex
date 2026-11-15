@@ -14,7 +14,7 @@ interface FormCardsProps {
   fallbackImg: string;
 }
 
-// 리전폼·진화 기믹 카드 (능력치는 원래 모습과 비교해서 보여준다)
+// 진화 기믹 카드 (능력치는 원래 모습과 비교해서 보여준다)
 export default function FormCards({ forms, baseStats, fallbackImg }: FormCardsProps) {
   const baseTotal = baseStats.reduce((sum, s) => sum + s.value, 0);
   return (

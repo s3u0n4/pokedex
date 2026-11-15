@@ -1,11 +1,14 @@
 import {
   AUTO_EXCLUDE, EV_KO, ITEMS_CSV, LANG_KO, LEARN_METHODS, MACHINES_CSV, MACHINE_CACHE_KEY, MOVES_CSV, MOVE_CACHE_KEY,
-  MOVE_NAMES_CSV, SETS_URL, TM_THREE_DIGIT, TYPES, TYPE_BY_ID, VG_BY_ID, VG_FAMILIES, VG_PREFERRED,
+  MOVE_NAMES_CSV, SETS_URL, STORY_EXCLUDE, TM_THREE_DIGIT, TYPES, TYPE_BY_ID, TYPE_ITEM, VG_BY_ID, VG_FAMILIES, VG_PREFERRED,
 } from '../lib/constants';
-import { store } from '../lib/store';
-import { asList, getJSON, getText, natureText, normId, parseCSV, readCache, writeCache } from '../lib/utils';
+import { entryOf, store } from '../lib/store';
+import {
+  asList, getJSON, getText, natureText, normId, parseCSV, readCache, slugify, superEffectiveAgainst, writeCache,
+} from '../lib/utils';
 import type {
-  AutoPick, AutoRecommendation, Detail, MoveData, MoveInfo, MoveRow, PokemonMove, SetDescription, SmogonFormats, SmogonSet,
+  AutoPick, AutoRecommendation, Detail, ItemSuggestion, MoveData, MoveLearn, MoveInfo, MoveRow, PokemonMove, SetDescription, SmogonFormats,
+  SmogonSet,
 } from '../types';
 import { translate } from './names';
 
@@ -105,6 +108,20 @@ export function moveRows(d: Detail, vg: string | null, method: string): MoveRow[
   return rows.sort(byName);
 }
 
+// 한 게임에서 이 포켓몬이 기술을 배우는 방법 (못 배우면 null)
+export function learnOf(d: Detail, vg: string | null, slug: string): MoveLearn | null {
+  const pm = d.moves.find((x) => x.slug === slug);
+  const ls = pm?.learn.filter((l) => l.vg === vg) ?? [];
+  if (!pm || !vg || !ls.length) return null;
+  const levels = ls.filter((l) => l.method === 'level-up').map((l) => l.level);
+  return {
+    level: levels.length ? Math.min(...levels) : null,
+    tm: ls.some((l) => l.method === 'machine') ? machineLabel(vg, pm.id) || '번호 모름' : null,
+    egg: ls.some((l) => l.method === 'egg'),
+    tutor: ls.some((l) => l.method === 'tutor'),
+  };
+}
+
 /* ---------- 추천 기술 배치 ---------- */
 
 /** 쇼다운식 포켓몬 ID(garchomp) → 룰 → 세트 */
@@ -118,15 +135,20 @@ export function loadSets() {
   return setsPromise;
 }
 
-// Smogon 세트 하나를 화면에 쓸 한국어 데이터로 바꾼다
-export async function describeSet(name: string, s: SmogonSet): Promise<SetDescription> {
+// Smogon 세트 하나를 화면에 쓸 한국어 데이터로 바꾼다 (d가 있으면 기술마다 배우는 방법도 붙인다)
+export async function describeSet(name: string, s: SmogonSet, d?: Detail): Promise<SetDescription> {
+  const vg = d ? defaultVG(d) : null;
   const [items, abilities] = await Promise.all([
     Promise.all(asList(s.item).map((n) => translate('item', n))),
     Promise.all(asList(s.ability).map((n) => translate('ability', n))),
   ]);
   const moves = s.moves.map((slot) => asList(slot).map((en) => {
     const mv = store.movesByNorm[normId(en)];
-    return { name: mv?.ko || en, type: mv?.type && TYPES[mv.type] ? mv.type : null };
+    return {
+      name: mv?.ko || en,
+      type: mv?.type && TYPES[mv.type] ? mv.type : null,
+      learn: d && mv ? learnOf(d, vg, mv.slug) : undefined,
+    };
   }));
   const evs = asList(s.evs)[0];
   const tera = asList(s.teratypes).map((t) => TYPES[t.toLowerCase()]?.[0] || (t === 'Stellar' ? '스텔라' : t));
@@ -140,38 +162,148 @@ export async function describeSet(name: string, s: SmogonSet): Promise<SetDescri
   return { name, moves, meta: meta.filter(([, v]) => v) };
 }
 
-// 대전 데이터에 없는 포켓몬은 종족값과 배울 수 있는 기술로 공격 기술 4개를 고른다
-export function autoRecommend(id: number, d: Detail): AutoRecommendation {
-  const vg = defaultVG(d);
+/* ---------- 자동 추천 (대전용·스토리용) ---------- */
+
+interface Profile {
+  stat: Record<string, number>;
+  atk: number;
+  spa: number;
+  best: number;
+  /** 공격과 특공 차이가 작으면 물리·특수를 섞어 쓴다 */
+  mixed: boolean;
+  ownTypes: string[];
+}
+
+function profileOf(id: number, d: Detail): Profile {
   const stat = Object.fromEntries(d.stats.map((s) => [s.key, s.value]));
   const atk = stat.attack, spa = stat['special-attack'];
   const best = Math.max(atk, spa);
-  const ownTypes = store.list[id - 1].types;
-  // 공격과 특공 차이가 크면 더 높은 쪽 분류의 기술만 쓴다
-  const mixed = Math.min(atk, spa) / best >= 0.85;
-  const mainCls = atk >= spa ? 2 : 3;
+  return { stat, atk, spa, best, mixed: Math.min(atk, spa) / best >= 0.85, ownTypes: entryOf(id)?.types ?? [] };
+}
 
-  const candidates = new Map<string, AutoPick>();
+// 공격 기술 하나의 점수 (위력·명중률·자속·공격/특공 비율). 쓸 수 없는 기술이면 0
+function scoreMove(mv: MoveInfo, p: Profile, maxPower: number) {
+  if (!mv.power || mv.cls === 1 || !mv.type || AUTO_EXCLUDE.has(mv.slug)) return 0;
+  if (!p.mixed && mv.cls !== (p.atk >= p.spa ? 2 : 3)) return 0;
+  const ratio = (mv.cls === 2 ? p.atk : p.spa) / p.best;
+  return Math.min(mv.power, maxPower) * (mv.acc || 100) / 100 * (p.ownTypes.includes(mv.type) ? 1.5 : 1) * ratio * ratio;
+}
+
+// 자기 타입 기술(자속)을 먼저 넣고, 나머지는 아직 약점을 못 찌르는 타입을 많이 찌르는 기술로 채운다
+function pickFour(candidates: AutoPick[], ownTypes: string[]) {
+  const sorted = [...candidates].sort((a, b) => b.score - a.score);
+  const picked: AutoPick[] = [], used = new Set<string>(), covered = new Set<string>();
+  const add = (mv: AutoPick) => {
+    picked.push(mv);
+    used.add(mv.type);
+    superEffectiveAgainst(mv.type).forEach((t) => covered.add(t));
+  };
+  for (const t of ownTypes) {
+    const mv = sorted.find((m) => m.type === t);
+    if (mv) add(mv);
+  }
+  while (picked.length < 4) {
+    let best: AutoPick | null = null, bestScore = 0;
+    for (const mv of sorted) {
+      if (used.has(mv.type)) continue;
+      const fresh = superEffectiveAgainst(mv.type).filter((t) => !covered.has(t)).length;
+      const score = mv.score * (1 + 0.25 * fresh);
+      if (score > bestScore) { best = mv; bestScore = score; }
+    }
+    if (!best) break;
+    add(best);
+  }
+  return picked.slice(0, 4);
+}
+
+const bulkOf = (stat: Record<string, number>) => stat.hp + stat.defense + stat['special-defense'];
+
+// 진화 단계의 마지막이 아니면 진화의휘석을 쓸 수 있다 (리전폼은 원래 종의 단계로 본다)
+function canEvolve(id: number, d: Detail) {
+  const base = entryOf(id)?.base ?? id;
+  const i = d.stages.findIndex((ids) => ids.includes(base));
+  return i >= 0 && i < d.stages.length - 1;
+}
+
+const typeItem = (mv: AutoPick | undefined): ItemSuggestion[] => (mv
+  ? [{ slug: TYPE_ITEM[mv.type], why: `${TYPES[mv.type][0]} 타입 기술 위력 1.2배 (${mv.name}에 맞춰서)` }]
+  : []);
+
+// 대전 데이터에 없는 포켓몬은 종족값과 배울 수 있는 기술로 공격 기술 4개와 도구를 고른다
+export function autoRecommend(id: number, d: Detail): AutoRecommendation {
+  const vg = defaultVG(d);
+  const p = profileOf(id, d);
+  const candidates: AutoPick[] = [];
   for (const m of d.moves) {
     if (!m.learn.some((l) => l.vg === vg && LEARN_METHODS.some(([k]) => k === l.method))) continue;
     const mv = moveInfo(m);
-    if (!mv.power || mv.cls === 1 || !mv.type || AUTO_EXCLUDE.has(mv.slug)) continue;
-    if (!mixed && mv.cls !== mainCls) continue;
-    const ratio = (mv.cls === 2 ? atk : spa) / best;
-    const score = Math.min(mv.power, 150) * (mv.acc || 100) / 100 * (ownTypes.includes(mv.type) ? 1.5 : 1) * ratio * ratio;
-    candidates.set(mv.slug, { ...mv, type: mv.type, score });
+    const score = scoreMove(mv, p, 150);
+    if (score && mv.type) candidates.push({ ...mv, type: mv.type, score });
   }
-  const sorted = [...candidates.values()].sort((a, b) => b.score - a.score);
+  const picked = pickFour(candidates, p.ownTypes).map((mv) => ({ ...mv, learn: learnOf(d, vg, mv.slug) }));
 
-  // 자기 타입 기술(자속)을 먼저 넣고, 나머지는 겹치지 않는 타입으로 채운다
-  const picked: AutoPick[] = [], used = new Set<string>();
-  for (const t of ownTypes) {
-    const mv = sorted.find((m) => m.type === t);
-    if (mv) { picked.push(mv); used.add(t); }
+  const items: ItemSuggestion[] = [];
+  if (canEvolve(id, d)) items.push({ slug: 'eviolite', why: '진화 전 포켓몬의 방어·특방 1.5배' });
+  if (bulkOf(p.stat) >= 270 || p.best < 80) {
+    items.push(
+      { slug: 'assault-vest', why: '특방 1.5배. 공격 기술만 쓰는 이 배치와 잘 맞아요' },
+      { slug: 'leftovers', why: '매 턴 HP를 1/16씩 회복해요' },
+    );
+  } else if (p.stat.speed >= 95) {
+    items.push(
+      { slug: 'life-orb', why: '기술 위력 1.3배, 대신 쓸 때마다 HP 1/10 감소' },
+      { slug: 'focus-sash', why: 'HP가 가득일 때 한 방에 쓰러지지 않고 HP 1로 버텨요' },
+    );
+  } else {
+    items.push(
+      { slug: 'choice-scarf', why: '스피드 1.5배, 대신 처음 고른 기술만 계속 써야 해요' },
+      p.atk >= p.spa
+        ? { slug: 'choice-band', why: '공격 1.5배, 대신 처음 고른 기술만 계속 써야 해요' }
+        : { slug: 'choice-specs', why: '특공 1.5배, 대신 처음 고른 기술만 계속 써야 해요' },
+    );
   }
-  for (const mv of sorted) {
-    if (picked.length >= 4) break;
-    if (!used.has(mv.type)) { picked.push(mv); used.add(mv.type); }
+  return { picked, items: items.slice(0, 3), atk: p.atk, spa: p.spa, vg, mixed: p.mixed };
+}
+
+// 스토리용: 지금 게임에서 레벨업·기술머신으로 배우는 기술 중 명중률이 높고 PP가 넉넉한 기술을 고른다
+// (알 기술·기술 가르침은 스토리 중에 얻기 어려워서 뺀다)
+export function storyRecommend(id: number, d: Detail): AutoRecommendation {
+  const vg = defaultVG(d);
+  const p = profileOf(id, d);
+  // 레벨업은 가장 먼저 배우는 레벨을, 기술머신은 번호를 같이 남긴다 (레벨업 목록이 레벨 순이라 처음 나온 것이 가장 낮다)
+  const candidates = new Map<string, AutoPick>();
+  for (const method of ['level-up', 'machine']) {
+    for (const r of moveRows(d, vg, method)) {
+      if (STORY_EXCLUDE.has(r.slug) || (r.acc && r.acc < 90)) continue;
+      const score = scoreMove(r, p, 120) * (r.pp >= 10 ? 1 : 0.85);
+      if (!score || !r.type) continue;
+      // 알 기술·기술 가르침은 스토리에서 쓰지 않으므로 레벨업·기술머신만 남긴다
+      const mv = candidates.get(r.slug) ?? { ...r, type: r.type, score, learn: { level: null, tm: null, egg: false, tutor: false } };
+      if (method === 'level-up') mv.learn!.level ??= r.level;
+      else mv.learn!.tm = r.tm || '번호 모름';
+      candidates.set(r.slug, mv);
+    }
   }
-  return { picked: picked.slice(0, 4), atk, spa, vg, mixed };
+  const picked = pickFour([...candidates.values()], p.ownTypes);
+
+  const items: ItemSuggestion[] = typeItem(picked.find((m) => p.ownTypes.includes(m.type)) ?? picked[0]);
+  items.push(bulkOf(p.stat) >= 240
+    ? { slug: 'leftovers', why: '매 턴 HP를 조금씩 회복해서 회복약을 아낄 수 있어요' }
+    : { slug: 'shell-bell', why: '준 데미지의 1/8만큼 HP를 회복해요' });
+  items.push({ slug: 'lucky-egg', why: '얻는 경험치 1.5배. 레벨을 빨리 올릴 때 좋아요' });
+  return { picked, items, atk: p.atk, spa: p.spa, vg, mixed: p.mixed };
+}
+
+// Smogon 세트에서 많이 쓰는 도구 (모든 룰의 세트를 합쳐서 센다)
+export function popularItems(formats: SmogonFormats): ItemSuggestion[] {
+  const counts = new Map<string, number>();
+  for (const sets of Object.values(formats)) {
+    for (const set of Object.values(sets)) {
+      for (const en of new Set(asList(set.item))) counts.set(en, (counts.get(en) || 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([en, n]) => ({ slug: slugify(en), why: `Smogon 세트 ${n}개에서 사용` }));
 }

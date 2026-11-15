@@ -1,8 +1,8 @@
 import {
-  API, FORM_KO, GIMMICKS, PRIMAL_ORB, REGIONS, REGION_FORM_KO, REGION_KO, TIME_KO, TOTAL, TYPES,
+  API, FORM_KO, GIMMICKS, PRIMAL_ORB, REGIONS, REGION_KO, TIME_KO, TOTAL, TYPES,
 } from '../lib/constants';
 import { nameOf, store } from '../lib/store';
-import { art, getJSON, gimmickKind, idFromUrl, latestText, regionOf, withRo } from '../lib/utils';
+import { art, getJSON, gimmickKind, idFromUrl, latestText, regionOf } from '../lib/utils';
 import type {
   AbilityInfo, ApiAbility, ApiChainLink, ApiEvolutionChain, ApiEvolutionDetail, ApiForm, ApiItemCategory, ApiPokemon,
   ApiSpecies, Detail, FormCardData, GenderArt, GimmickKind, LocalizedName, NamedResource, Stat,
@@ -138,31 +138,6 @@ async function loadGimmick(ref: NamedResource, kind: GimmickKind, baseKo: string
   };
 }
 
-/* ---------- 리전폼 ---------- */
-
-async function loadRegional(ref: NamedResource, baseKo: string): Promise<FormCardData | null> {
-  const region = regionOf(ref.name);
-  if (!region) return null;
-  const [regionKo, color] = REGIONS[region];
-  const fp = await getJSON<ApiPokemon>(ref.url);
-  const abilities = await Promise.all(fp.abilities.map(async (a) => {
-    const name = (await koName(a.ability)) || a.ability.name;
-    return a.is_hidden ? `${name}(숨겨진 특성)` : name;
-  }));
-  const extra = ref.name.split(`-${region}`)[1].replace(/^-/, '');
-  return {
-    key: ref.name,
-    label: `${regionKo}의 모습`,
-    color,
-    name: `${regionKo} ${baseKo}${REGION_FORM_KO[extra] ? ` (${REGION_FORM_KO[extra]})` : ''}`,
-    img: officialArt(fp),
-    types: fp.types.map((t) => t.type.name),
-    stats: statsOf(fp),
-    ability: abilities.join(' / '),
-    how: '',
-  };
-}
-
 /* ---------- 암수 모습 ---------- */
 
 // 냐오닉스·에브리즈 등은 암컷이 따로 된 포켓몬이라 공식 일러스트가 있고,
@@ -192,7 +167,6 @@ interface EvoMethod {
 
 interface RegionalEvo {
   m: ApiEvolutionDetail;
-  sid: number;
   parent: number;
   from: string | null;
   to: string | null;
@@ -201,14 +175,17 @@ interface RegionalEvo {
 const details = new Map<number, Promise<Detail>>();
 
 async function fetchDetail(id: number): Promise<Detail> {
+  // 리전폼(10000번대)은 능력치·특성·기술은 자기 것을, 도감 설명·성비·진화는 원래 종의 것을 쓴다
+  const form = id > TOTAL ? store.forms.find((f) => f.id === id) : undefined;
+  const speciesId = form ? form.base : id;
   const [pk, sp] = await Promise.all([
     getJSON<ApiPokemon>(`${API}/pokemon/${id}`),
-    getJSON<ApiSpecies>(`${API}/pokemon-species/${id}`),
+    getJSON<ApiSpecies>(`${API}/pokemon-species/${speciesId}`),
     loadMoveData(),
     loadMachines().catch((err: unknown) => console.error(err)), // 번호 없이도 목록은 보여줄 수 있다
   ]);
-  const varieties = sp.varieties.map((v) => v.pokemon);
-  const [abilities, chain, gimmicks, regionals] = await Promise.all([
+  const varieties = form ? [] : sp.varieties.map((v) => v.pokemon);
+  const [abilities, chain, gimmicks] = await Promise.all([
     Promise.all(pk.abilities.map(async (a): Promise<AbilityInfo> => {
       const ab = await getJSON<ApiAbility>(a.ability.url);
       return { name: koOf(ab.names) || a.ability.name, hidden: a.is_hidden, desc: latestText(ab.flavor_text_entries) };
@@ -218,8 +195,6 @@ async function fetchDetail(id: number): Promise<Detail> {
       const kind = gimmickKind(ref.name);
       return kind ? [loadGimmick(ref, kind, nameOf(id), sp.name)] : [];
     })),
-    Promise.all(varieties.filter((ref) => !gimmickKind(ref.name)).map((ref) => loadRegional(ref, nameOf(id))))
-      .then((list) => list.filter((r): r is FormCardData => r !== null)),
   ]);
 
   // 게임마다 진화 방법이 다를 수 있어서, 기본(is_default) 방법이나 가장 최근 방법 하나만 보여준다.
@@ -245,7 +220,7 @@ async function fetchDetail(id: number): Promise<Detail> {
     }
     for (const list of Object.values(groups)) {
       const m = pick(list);
-      regionalEvo.push({ m, sid, parent, from: regionalName(m.required_pokemon_form), to: regionalName(m.evolved_pokemon_form) });
+      regionalEvo.push({ m, parent, from: regionalName(m.required_pokemon_form), to: regionalName(m.evolved_pokemon_form) });
     }
     node.evolves_to.forEach((n) => walk(n, depth + 1, sid));
   };
@@ -258,31 +233,24 @@ async function fetchDetail(id: number): Promise<Detail> {
     evoText[Number(sid)] = from ? `${formKo(from, parent)}에서 · ${cond}` : cond;
   }));
 
-  // 리전폼 카드에 붙일 진화 설명 (모습 이름 → 문장들), 진화 칸에 붙일 리전폼 진화 조건 (모습 이름 → 조건)
-  const fromLines: Record<string, string[]> = {}, toLines: Record<string, string[]> = {}, formEvoText: Record<string, string> = {};
-  await Promise.all(regionalEvo.map(async ({ m, sid, parent, from, to }) => {
-    const cond = await evoCondition(m);
-    if (to) {
-      (fromLines[to] ||= []).push(`${from ? formKo(from, parent) : nameOf(parent)}에서 진화 · ${cond}`);
-      formEvoText[to] = from ? `${formKo(from, parent)}에서 · ${cond}` : cond;
-    }
-    if (from) (toLines[from] ||= []).push(`${withRo(to ? formKo(to, sid) : nameOf(sid))} 진화 · ${cond}`);
+  // 진화 칸에 붙일 리전폼 진화 조건 (모습 이름 → 조건)
+  const formEvoText: Record<string, string> = {};
+  await Promise.all(regionalEvo.map(async ({ m, parent, from, to }) => {
+    if (to) formEvoText[to] = from ? `${formKo(from, parent)}에서 · ${await evoCondition(m)}` : await evoCondition(m);
   }));
-  regionals.forEach((r) => { r.how = [...(fromLines[r.key] || []), ...(toLines[r.key] || [])].join('\n'); });
 
   return {
     height: pk.height / 10,
     weight: pk.weight / 10,
     genderRate: sp.gender_rate,
     genderArt: genderArtOf(pk, id, varieties),
-    flavor: latestText(sp.flavor_text_entries),
+    flavor: form ? '' : latestText(sp.flavor_text_entries), // 종의 설명은 원래 모습 이야기라 리전폼에는 쓰지 않는다
     stats: statsOf(pk),
     abilities,
     stages: stages.map((ids) => ids.filter((sid) => sid <= TOTAL)).filter((ids) => ids.length),
     evoText,
     formEvoText,
     gimmicks,
-    regionals,
     moves: pk.moves.map((m) => ({
       id: idFromUrl(m.move.url),
       slug: m.move.name,
