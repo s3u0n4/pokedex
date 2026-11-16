@@ -102,7 +102,7 @@ export const VG_FAMILIES = [
 ];
 // 기술머신 번호가 세 자리인 게임
 export const TM_THREE_DIGIT = new Set(['scarlet-violet', 'the-teal-mask', 'the-indigo-disk', 'legends-za', 'mega-dimension']);
-export const VG_PREFERRED = ['scarlet-violet', 'champions', 'sword-shield', 'brilliant-diamond-shining-pearl', 'ultra-sun-ultra-moon'];
+export const VG_PREFERRED = ['scarlet-violet', 'sword-shield', 'brilliant-diamond-shining-pearl', 'ultra-sun-ultra-moon'];
 
 export const NATURES = 'Hardy Lonely Brave Adamant Naughty Bold Docile Relaxed Impish Lax Timid Hasty Serious Jolly Naive Modest Mild Quiet Bashful Rash Calm Gentle Sassy Careful Quirky'.split(' ');
 export const NATURES_KO = '노력 외로움 용감 고집 개구쟁이 대담 온순 무사태평 장난꾸러기 촐랑 겁쟁이 성급 성실 명랑 천진난만 조심 의젓 냉정 수줍음 덜렁 차분 얌전 건방 신중 변덕'.split(' ');

@@ -106,9 +106,13 @@ export function moveInfo(m: PokemonMove): MoveInfo {
   };
 }
 
+// 레벨업·기술머신·알 기술·기술 가르침으로 배우는 기술만 센다
+// (포켓몬 챔피언스는 모든 기술이 train이라, 세면 기술 목록·스토리 추천이 빈 게임이 기본으로 잡힌다)
 export function versionGroups(d: Detail) {
   const counts: Record<string, number> = {};
-  d.moves.forEach((m) => m.learn.forEach((l) => { counts[l.vg] = (counts[l.vg] || 0) + 1; }));
+  d.moves.forEach((m) => m.learn.forEach((l) => {
+    if (LEARN_METHODS.some(([k]) => k === l.method)) counts[l.vg] = (counts[l.vg] || 0) + 1;
+  }));
   return counts;
 }
 
