@@ -13,8 +13,8 @@ export const ART_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/maste
 export const SETS_URL = 'https://data.pkmn.cc/sets/gen9.json';
 
 export const CACHE_KEY = 'pokedex-index-v3';
-export const MOVE_CACHE_KEY = 'pokedex-moves-v1';
-export const MACHINE_CACHE_KEY = 'pokedex-machines-v1';
+export const MOVE_CACHE_KEY = 'pokedex-moves-v2';
+export const MACHINE_CACHE_KEY = 'pokedex-machines-v2';
 export const LANG_KO = '3';
 export const LANG_EN = '9';
 
@@ -137,6 +137,13 @@ export const TYPE_ITEM: Record<string, string> = {
 };
 // 스토리 추천에서 더 빼는 기술 (쓰고 나면 특공이 크게 떨어져서 연달아 싸우기 불편하다)
 export const STORY_EXCLUDE = new Set(['overheat', 'leaf-storm', 'draco-meteor', 'psycho-boost', 'fleur-cannon']);
+// 공격 기술이 4개가 안 되는 포켓몬을 채우는 변화 기술 (앞에 있을수록 먼저 고른다)
+export const SETUP_PHYSICAL = ['swords-dance', 'dragon-dance', 'shell-smash', 'bulk-up', 'coil', 'shift-gear', 'hone-claws', 'howl', 'curse', 'work-up', 'growth', 'harden', 'defense-curl', 'withdraw'];
+export const SETUP_SPECIAL = ['quiver-dance', 'nasty-plot', 'tail-glow', 'shell-smash', 'calm-mind', 'work-up', 'growth', 'cosmic-power', 'iron-defense', 'amnesia', 'harden', 'defense-curl', 'withdraw'];
+export const RECOVERY_MOVES = ['recover', 'roost', 'slack-off', 'soft-boiled', 'milk-drink', 'shore-up', 'synthesis', 'moonlight', 'morning-sun', 'strength-sap', 'wish', 'leech-seed', 'ingrain', 'aqua-ring', 'rest'];
+export const STATUS_MOVES = ['spore', 'thunder-wave', 'will-o-wisp', 'toxic', 'glare', 'sleep-powder', 'yawn', 'hypnosis', 'stun-spore', 'poison-powder', 'confuse-ray', 'string-shot', 'sand-attack', 'growl', 'tail-whip', 'leer'];
+// 그 밖의 기술로 채울 때도 고르지 않는 기술 (아무 효과가 없다)
+export const USELESS_MOVES = new Set(['splash', 'celebrate', 'hold-hands', 'happy-hour']);
 export const SHOWDOWN_ID: Record<number, string> = { 29: 'nidoranf', 32: 'nidoranm' };
 
 // 배틀 중 특수 변신 (PokeAPI에서는 포켓몬의 다른 모습(variety)으로 들어 있다)

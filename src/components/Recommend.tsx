@@ -131,13 +131,14 @@ function PickCard({ title, picked }: { title: string; picked: AutoPick[] }) {
           {picked.map((m) => (
             <li key={m.slug}>
               <span className="set-move"><TypeBadge type={m.type} /> {m.name}</span>
-              <span className="set-extra"><ClsBadge cls={m.cls} /> 위력 {m.power}</span>
+              <span className="set-extra"><ClsBadge cls={m.cls} />{m.power > 0 && ` 위력 ${m.power}`}</span>
               {m.learn !== undefined && <LearnTags learn={m.learn} />}
             </li>
           ))}
         </ol>
         <LearnPlan moves={picked} />
       </div>
+      {picked.some((m) => !m.score) && <p className="rec-note">쓸 만한 공격 기술이 4개가 안 돼서 변화 기술 같은 다른 기술로 채웠어요.</p>}
     </div>
   );
 }
