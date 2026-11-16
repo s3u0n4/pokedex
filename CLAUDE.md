@@ -12,7 +12,7 @@ React + Vite + TypeScript(strict)로 되어 있다. 처음에는 `index.html` �
 
 ## 배포
 
-- Vercel 프로젝트 `pokedex` (팀 `s3u0n4s-projects`), 주소: https://pokedex-five-chi-66.vercel.app
+- Vercel 프로젝트 `pokedex` (팀 `s3u0n4s-projects`), 주소: https://sun-pokedex.vercel.app (2026-11-16 프로젝트 도메인으로 추가, 예전 주소 pokedex-five-chi-66.vercel.app도 그대로 연결돼 있다)
 - GitHub: https://github.com/s3u0n4/pokedex (공개, 2026-11-14 비공개에서 전환)
 - 수동 배포: `npx vercel deploy --prod --yes` (프로젝트 연결 정보는 `.vercel/`, git에는 안 올라감)
 - git 제외 규칙은 사용자 요청으로 `.gitignore` 대신 `.git/info/exclude`(로컬 전용)에 있다: `node_modules`, `dist`, `.idea/`, `.DS_Store`, `.vercel`, `.env*`. 새로 클론하면 이 규칙이 없으니 먼저 다시 적을 것. `.env.local`에는 Vercel 토큰이 있다.
