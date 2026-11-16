@@ -2,18 +2,28 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadIndex } from './api/pokedex';
 import Controls from './components/Controls';
 import DetailModal, { type GoTo } from './components/DetailModal';
-import Header from './components/Header';
+import Header, { type View } from './components/Header';
 import PokemonGrid from './components/PokemonGrid';
+import RaidPage from './components/RaidPage';
 import { Status } from './components/ui';
 import { GENS, TOTAL } from './lib/constants';
 import { entryOf } from './lib/store';
 import type { ListEntry, PokedexIndex } from './types';
 
-// 주소 끝의 #25 같은 해시가 상세 화면을 연다 (리전폼은 #10100 같은 PokeAPI id)
-function hashId() {
-  const id = Number(location.hash.slice(1));
-  return Number.isInteger(id) && id >= 1 && entryOf(id) ? id : null;
+// 주소 끝의 #25 같은 해시가 상세 화면을 연다 (리전폼은 #10100 같은 PokeAPI id).
+// 레이드 화면은 #raid, 거기서 연 상세는 #raid/25
+function parseHash(): { view: View; id: number | null } {
+  const [head, tail] = location.hash.slice(1).split('/');
+  const view: View = head === 'raid' ? 'raid' : 'dex';
+  const raw = view === 'raid' ? tail : head;
+  const id = Number(raw);
+  return { view, id: raw && Number.isInteger(id) && id >= 1 && entryOf(id) ? id : null };
 }
+
+const hashFor = (view: View, id: number | null) => {
+  if (view === 'raid') return id ? `#raid/${id}` : '#raid';
+  return id ? `#${id}` : '';
+};
 
 export default function App() {
   const [index, setIndex] = useState<PokedexIndex | null>(null);
@@ -22,12 +32,15 @@ export default function App() {
   const [gen, setGen] = useState(0);
   const [type, setType] = useState<string | null>(null);
   const [current, setCurrent] = useState<number | null>(null);
+  const [view, setView] = useState<View>(() => parseHash().view);
 
   const currentRef = useRef<number | null>(null);
+  const viewRef = useRef<View>(view);
   const pushedRef = useRef(false);          // 목록에서 열어서 방문 기록이 하나 쌓였는지 (닫을 때 뒤로 가기)
   const lastOpenedRef = useRef<number | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   currentRef.current = current;
+  viewRef.current = view;
 
   const load = useCallback(() => {
     setLoadError(false);
@@ -38,8 +51,9 @@ export default function App() {
   useEffect(() => {
     if (!index) return undefined;
     const sync = () => {
-      const id = hashId();
+      const { view: v, id } = parseHash();
       if (!id) pushedRef.current = false;
+      setView(v);
       setCurrent(id);
     };
     sync();
@@ -83,25 +97,37 @@ export default function App() {
     return { prevId: order[i - 1] ?? null, nextId: order[i + 1] ?? null };
   }, [current, filtered, entries]);
 
-  const openFromList = useCallback((entry: ListEntry) => {
+  const open = useCallback((id: number) => {
     pushedRef.current = true;
-    location.hash = String(entry.id);
+    location.hash = hashFor(viewRef.current, id);
   }, []);
+  const openFromList = useCallback((entry: ListEntry) => open(entry.id), [open]);
 
   // 상세 화면 안에서 이동할 때는 방문 기록을 쌓지 않는다
   const go = useCallback<GoTo>((id) => {
     if (!id || id === currentRef.current) return;
-    history.replaceState(null, '', `#${id}`);
+    history.replaceState(null, '', hashFor(viewRef.current, id));
     setCurrent(id);
   }, []);
 
   const close = useCallback(() => {
     if (pushedRef.current) history.back();
     else {
-      history.replaceState(null, '', location.pathname + location.search);
+      history.replaceState(null, '', location.pathname + location.search + hashFor(viewRef.current, null));
       setCurrent(null);
     }
   }, []);
+
+  // 카테고리를 바꾸면 방문 기록이 하나 쌓인다 (뒤로 가기로 돌아올 수 있게)
+  const changeView = (v: View) => {
+    if (v === view) return;
+    if (v === 'raid') location.hash = 'raid';
+    else history.pushState(null, '', location.pathname + location.search);
+    pushedRef.current = false;
+    setView(v);
+    setCurrent(null);
+    window.scrollTo(0, 0);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -120,33 +146,40 @@ export default function App() {
 
   const resetFilters = () => { setQuery(''); setGen(0); setType(null); };
 
+  // 도감 목록(종 이름·타입)을 받기 전에는 두 카테고리 모두 이 상태를 보여준다
+  const indexStatus = !index && (loadError ? (
+    <Status>
+      <p>데이터를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>
+      <button className="primary-btn" onClick={load}>다시 시도</button>
+    </Status>
+  ) : <Status wobble><p>도감 데이터를 불러오는 중…</p></Status>);
+
   return (
     <>
-      <Header />
-      <Controls
-        query={query} onQuery={setQuery}
-        gen={gen} onGen={setGen}
-        type={type} onType={setType}
-        countText={index ? `${filtered.length}마리` : ''}
-        showReset={Boolean(query.trim() || gen || type)}
-        onReset={resetFilters}
-        searchRef={searchRef}
-      />
-
-      <main className="wrap">
-        {index && <PokemonGrid entries={filtered} onOpen={openFromList} />}
-        {index && !filtered.length && <Status><p>조건에 맞는 포켓몬이 없어요.</p></Status>}
-        {!index && !loadError && <Status wobble><p>도감 데이터를 불러오는 중…</p></Status>}
-        {loadError && (
-          <Status>
-            <p>데이터를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>
-            <button className="primary-btn" onClick={load}>다시 시도</button>
-          </Status>
-        )}
-      </main>
+      <Header view={view} onView={changeView} />
+      {view === 'dex' ? (
+        <>
+          <Controls
+            query={query} onQuery={setQuery}
+            gen={gen} onGen={setGen}
+            type={type} onType={setType}
+            countText={index ? `${filtered.length}마리` : ''}
+            showReset={Boolean(query.trim() || gen || type)}
+            onReset={resetFilters}
+            searchRef={searchRef}
+          />
+          <main className="wrap">
+            {index && <PokemonGrid entries={filtered} onOpen={openFromList} />}
+            {index && !filtered.length && <Status><p>조건에 맞는 포켓몬이 없어요.</p></Status>}
+            {indexStatus}
+          </main>
+        </>
+      ) : index ? <RaidPage onOpen={open} searchRef={searchRef} /> : <main className="wrap">{indexStatus}</main>}
 
       <footer className="wrap">
-        데이터 출처: <a href="https://pokeapi.co" target="_blank" rel="noopener noreferrer">PokeAPI</a> · 포켓몬스터 © Nintendo / Creatures / GAME FREAK
+        데이터 출처: <a href="https://pokeapi.co" target="_blank" rel="noopener noreferrer">PokeAPI</a>
+        {view === 'raid' && <>, 맥스레이드 굴 <a href="https://www.serebii.net/swordshield/maxraidbattledens.shtml" target="_blank" rel="noopener noreferrer">Serebii</a></>}
+        {' '}· 포켓몬스터 © Nintendo / Creatures / GAME FREAK
       </footer>
 
       {index && current && (

@@ -302,3 +302,50 @@ export interface ApiChainLink {
 export interface ApiEvolutionChain {
   chain: ApiChainLink;
 }
+
+/* ---------- 소드·실드 맥스레이드배틀 굴 (Serebii에서 정리한 public/data/swsh-raids.json) ---------- */
+
+export type RaidVersion = 'sword' | 'shield';
+export type RaidRegion = 'galar' | 'ioa' | 'tct';
+
+/** 굴 출현표의 포켓몬 한 줄 */
+export interface RaidMon {
+  /** 도감 번호 */
+  n: number;
+  /** 다른 모습이면 그 모습의 PokeAPI 포켓몬 id (가라르 모습, 거다이맥스, 히트로토무 등) */
+  p?: number;
+  /** 모습 이름 (가라르의 모습, 히트로토무, 암컷 …) */
+  label?: string;
+  gmax?: boolean;
+  /** 숨겨진 특성이 나올 수 있는 별 단계 */
+  ha?: number[];
+  /** 별 단계(1~5) → 그 단계에서 나올 확률(%) */
+  s: Record<string, number>;
+}
+
+export interface RaidLocation {
+  region: RaidRegion;
+  /** 게임 속 한국어 장소 이름 (PKHeX 장소 텍스트) */
+  ko: string;
+  en: string;
+  dens: RaidDenInfo[];
+}
+
+/** 굴 하나 (게임 속 굴 순서 = 번호, RaidFinder 기준) */
+export interface RaidDenInfo {
+  /** 지역 안에서의 굴 번호 (와일드에리어 1~100, 갑옷섬 1~90, 왕관설원 1~86) */
+  no: number;
+  /** [일반 출현표 번호, 레어 출현표 번호] */
+  t: [number, number];
+  /** 지도 좌표 (왕관설원은 없다) */
+  x?: number;
+  y?: number;
+}
+
+export interface RaidData {
+  locations: RaidLocation[];
+  tables: Record<string, Record<RaidVersion, RaidMon[]>>;
+}
+
+/** 레이드 지도 영역의 지형 (색만 다르다) */
+export type RaidMapTerrain = 'water' | 'field' | 'hill' | 'sand' | 'rock' | 'forest' | 'snow';

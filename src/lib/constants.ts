@@ -1,4 +1,4 @@
-import type { GimmickKind, Region } from '../types';
+import type { GimmickKind, RaidRegion, RaidVersion, Region } from '../types';
 
 export const TOTAL = 1025;
 export const API = 'https://pokeapi.co/api/v2';
@@ -169,3 +169,8 @@ export const REGION_KO: Record<string, string> = {
   kanto: '관동', johto: '성도', hoenn: '호연', sinnoh: '신오', unova: '하나',
   kalos: '칼로스', alola: '알로라', galar: '가라르', hisui: '히스이', paldea: '팔데아',
 };
+
+// 소드·실드 맥스레이드배틀
+export const RAID_DATA_URL = `${import.meta.env.BASE_URL}data/swsh-raids.json`;
+export const RAID_VERSIONS: [RaidVersion, string][] = [['sword', '소드'], ['shield', '실드']];
+export const RAID_REGIONS: [RaidRegion, string][] = [['galar', '와일드에리어'], ['ioa', '갑옷섬'], ['tct', '왕관설원']];
