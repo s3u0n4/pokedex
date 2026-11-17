@@ -8,6 +8,7 @@ import FormCards from './FormCards';
 import GenderForms from './GenderForms';
 import Matchup from './Matchup';
 import MoveList from './MoveList';
+import Natures from './Natures';
 import Recommend from './Recommend';
 import StatBars from './StatBars';
 import { cssVars, Section, TypeBadges } from './ui';
@@ -74,6 +75,8 @@ export default function DetailBody({ id, d, shiny, onGo }: { id: number; d: Deta
       </Section>
 
       <Section title="종족값"><StatBars stats={d.stats} /></Section>
+
+      <Section title="추천 성격"><Natures id={id} d={d} /></Section>
 
       <Section title="진화"><Evolution d={d} current={id} onGo={onGo} /></Section>
 

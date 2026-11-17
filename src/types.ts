@@ -153,6 +153,14 @@ export interface ItemSuggestion {
   why: string;
 }
 
+export interface NatureSuggestion {
+  /** 영어 성격 이름 (NATURES) */
+  name: string;
+  why: string;
+  /** Smogon 세트에서 쓴 횟수 (자동 추천이면 0) */
+  sets: number;
+}
+
 export interface AutoRecommendation {
   picked: AutoPick[];
   items: ItemSuggestion[];

@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { autoRecommend, defaultVG, describeSet, loadSets, popularItems, storyRecommend } from '../api/moves';
+import { autoRecommend, defaultVG, describeSet, popularItems, setsFor, storyRecommend } from '../api/moves';
 import { itemKo } from '../api/names';
-import { ITEM_ART, SHOWDOWN_ID, TYPES, VG_KO } from '../lib/constants';
+import { ITEM_ART, TYPES, VG_KO } from '../lib/constants';
 import { entryOf, showdownName } from '../lib/store';
-import { formatLabel, normId, slugify, sortFormats } from '../lib/utils';
+import { formatLabel, slugify, sortFormats } from '../lib/utils';
 import type {
   AutoPick, AutoRecommendation, Detail, ItemSuggestion, SetDescription, MoveLearn, SmogonFormats, SmogonSet,
 } from '../types';
@@ -187,15 +187,11 @@ function BattleRecommend({ id, d }: { id: number; d: Detail }) {
 
   useEffect(() => {
     let alive = true;
-    const entry = entryOf(id);
-    loadSets()
-      .then((all) => (entry && all[SHOWDOWN_ID[id] || normId(showdownName(entry))]) || null)
-      .catch((err: unknown) => { console.error(err); return null; })
-      .then((s) => {
-        if (!alive) return;
-        setSets(s);
-        if (s) setFormat(sortFormats(Object.keys(s))[0]);
-      });
+    setsFor(id).then((s) => {
+      if (!alive) return;
+      setSets(s);
+      if (s) setFormat(sortFormats(Object.keys(s))[0]);
+    });
     return () => { alive = false; };
   }, [id]);
 

@@ -36,7 +36,8 @@ src/
   api/
     pokedex.ts          loadIndex: 목록(종 1025 + 리전폼 58)
     detail.ts           getDetail: 상세 화면 데이터 전부(종·리전폼 모두), evoCondition, 진화 기믹·암수 모습 로딩
-    moves.ts            기술 데이터, 기술머신 번호, moveRows, Smogon 세트(describeSet, popularItems), autoRecommend(대전), storyRecommend(스토리), 추천 도구
+    moves.ts            기술 데이터, 기술머신 번호, moveRows, Smogon 세트(setsFor, describeSet, popularItems), autoRecommend(대전), storyRecommend(스토리), 추천 도구
+    natures.ts          recommendNatures: 추천 성격 1~3순위 (Smogon 세트에서 많이 쓴 순서, 모자라면 종족값으로)
     names.ts            koName/itemKo/translate: 영어 리소스 → 한국어 이름
     raids.ts            소드·실드 맥스레이드: loadRaids, raidPlaces(버전·지역·검색·별·거다이맥스로 거르고 같은 출현표 굴은 묶음)
   components/
@@ -45,7 +46,7 @@ src/
     RaidPage, RaidMap                  소드·실드 맥스레이드 화면 (지역 지도, 장소별 접기, 굴마다 일반/레어 출현표)
     DetailModal                        상세 틀 (헤더, 이로치, 이전/다음, 로딩/에러), GoTo 타입
     DetailBody                         상세 본문 섹션 순서
-    Matchup, StatBars, Evolution, FormCards, GenderForms, Recommend, MoveList   상세 섹션
+    Matchup, StatBars, Natures, Evolution, FormCards, GenderForms, Recommend, MoveList   상세 섹션
     ui.tsx                             cssVars, Pokeball, TypeBadge, ClsBadge, Section, LoadingRow, Status, WeaknessBadges
 ```
 
@@ -95,6 +96,7 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 3. 타입 상성: 받는 피해(4배~무효) / 자속 기술로 잘 때리는 타입
 4. 특성
 5. 종족값
+5-1. 추천 성격 1~3순위: Smogon 세트(모든 룰)에서 많이 쓴 성격 순, 모자라면 종족값으로 채움 (낮출 능력치는 안 쓰는 공격 능력치, 공격·특공을 둘 다 쓰면 더 약한 방어 쪽. 올릴 능력치는 종족값 높은 순, 주력 공격 +10). 진화 전이면 최종 진화 이름과 함께 "성격은 진화해도 그대로" 안내
 6. 진화: 단계별로 원래 모습과 리전폼, 각 모습 아래에 진화 조건
 7. 리전폼 / 다른 모습: 원래 모습과 리전폼 사이를 오가는 버튼 (있을 때만)
 8. 진화 기믹 카드: 메가진화, 거다이맥스, 원시회귀, 울트라버스트, 무한다이맥스 (있을 때만)
@@ -204,5 +206,6 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 | 27 | 갑옷섬·왕관설원 지도 (임의 배치), 눈 지형 추가 |
 | 28 | 굴을 정확히: RaidFinder 굴 번호·좌표로 와일드에리어·갑옷섬 지도를 다시 그리고 굴마다 점, 굴 카드 ↔ 지도 강조 |
 | 29 | 왕관설원도 굴 좌표(pkTeraRaid)로 지도를 다시 그림, 먼 동쪽 바다는 점선 상자로 당겨 표시 |
+| 30 | 추천 성격 1~3순위 섹션 (종족값 아래): Smogon 세트 사용 횟수 + 종족값 자동 추천, 이유 설명 |
 
 새 작업을 하면 위 표에 한 줄 추가하고, 구조·규칙·한계가 바뀌면 해당 절도 고친다.

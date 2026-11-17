@@ -1,9 +1,9 @@
 import {
   AUTO_EXCLUDE, EV_KO, ITEMS_CSV, LANG_KO, LEARN_METHODS, MACHINES_CSV, MACHINE_CACHE_KEY, MOVES_CSV, MOVE_CACHE_KEY,
-  MOVE_NAMES_CSV, RECOVERY_MOVES, SETS_URL, SETUP_PHYSICAL, SETUP_SPECIAL, STATUS_MOVES, STORY_EXCLUDE, TM_THREE_DIGIT, TYPES,
+  MOVE_NAMES_CSV, RECOVERY_MOVES, SETS_URL, SHOWDOWN_ID, SETUP_PHYSICAL, SETUP_SPECIAL, STATUS_MOVES, STORY_EXCLUDE, TM_THREE_DIGIT, TYPES,
   TYPE_BY_ID, TYPE_ITEM, USELESS_MOVES, VG_BY_ID, VG_FAMILIES, VG_PREFERRED,
 } from '../lib/constants';
-import { entryOf, store } from '../lib/store';
+import { entryOf, showdownName, store } from '../lib/store';
 import {
   asList, getJSON, getText, natureText, normId, parseCSV, readCache, slugify, superEffectiveAgainst, writeCache,
 } from '../lib/utils';
@@ -163,6 +163,14 @@ export function loadSets() {
     .then((raw) => Object.fromEntries(Object.entries(raw).map(([k, v]) => [normId(k), v])))
     .catch((err: unknown) => { setsPromise = null; throw err; });
   return setsPromise;
+}
+
+// 이 포켓몬(리전폼 포함)의 Smogon 세트. 대전 데이터에 없거나 받지 못하면 null
+export function setsFor(id: number): Promise<SmogonFormats | null> {
+  const entry = entryOf(id);
+  return loadSets()
+    .then((all) => (entry && all[SHOWDOWN_ID[id] || normId(showdownName(entry))]) || null)
+    .catch((err: unknown) => { console.error(err); return null; });
 }
 
 // Smogon 세트 하나를 화면에 쓸 한국어 데이터로 바꾼다 (d가 있으면 기술마다 배우는 방법도 붙인다)
