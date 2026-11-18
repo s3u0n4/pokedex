@@ -5,7 +5,7 @@ React + Vite + TypeScript(strict)로 되어 있다. 처음에는 `index.html` �
 
 ## 실행
 
-- 개발 서버: `npm run dev` → http://localhost:5173 (주소 끝에 `#25`를 붙이면 피카츄, `#10100`이면 알로라 라이츄 상세가 열린다. `#raid`는 소드·실드 맥스레이드 화면, `#raid/25`는 그 화면에서 연 상세. `#stats`는 능력치 순위 화면, `#stats/25`도 같은 방식)
+- 개발 서버: `npm run dev` → http://localhost:5173 (주소 끝에 `#25`를 붙이면 피카츄, `#10100`이면 알로라 라이츄 상세가 열린다. `#raid`는 소드·실드 맥스레이드 화면, `#raid/25`는 그 화면에서 연 상세. `#stats`는 능력치 순위 화면, `#story`는 게임별 추천 화면, `#stats/25`·`#story/25`도 같은 방식)
 - 타입 검사만: `npm run typecheck` (`tsc --noEmit`)
 - 배포용 빌드: `npm run build` → 타입 검사 후 `dist/`, 확인은 `npm run preview`
 - 서버(백엔드) 없음. 데이터는 전부 브라우저에서 PokeAPI 등으로 직접 받는다.
@@ -25,7 +25,7 @@ index.html              Vite 진입점 (폰트, #root)
 tsconfig.json           strict, moduleResolution bundler, jsx react-jsx
 src/
   main.tsx              React 시작
-  App.tsx               카테고리(전국도감/능력치 순위/레이드), 검색·필터 상태, 해시(#번호, #raid·#stats, #raid/번호) 라우팅, 키보드, 이전/다음 순서 (능력치 순위에서 열면 순위 순서)
+  App.tsx               카테고리(전국도감/능력치 순위/게임별 추천/레이드), 검색·필터 상태, 해시(#번호, #raid·#stats·#story, #raid/번호) 라우팅, 키보드, 이전/다음 순서 (능력치 순위·게임별 추천에서 열면 그 화면 순서, `pageOrder`)
   types.ts              앱 데이터 타입(Species, Detail, FormCardData …)과 PokeAPI·Smogon 응답 타입
   styles.css            전체 스타일 (예전 index.html의 CSS 그대로)
   lib/
@@ -40,11 +40,13 @@ src/
     natures.ts          recommendNatures: 추천 성격 1~3순위 (Smogon 세트에서 많이 쓴 순서, 모자라면 종족값으로)
     names.ts            koName/itemKo/translate: 영어 리소스 → 한국어 이름
     ranking.ts          능력치 순위: loadStatTable(종족값·전설·최종 진화 여부), rankEntries(세대·능력치·최종 진화만·전설 포함으로 거르고 순위)
+    story.ts            게임별 추천: loadDexes(게임별 지방 도감), storyPicks(그 게임 최종 모습, 스토리 점수, 키우는 진화 단계)
     raids.ts            소드·실드 맥스레이드: loadRaids, raidPlaces(버전·지역·검색·별·거다이맥스로 거르고 같은 출현표 굴은 묶음)
   components/
     Header                             헤더와 카테고리 전환 (View 타입)
     Controls, PokemonGrid              목록 화면
     StatsPage                          능력치 순위 화면
+    StoryPage                          게임별 추천 화면
     RaidPage, RaidMap                  소드·실드 맥스레이드 화면 (지역 지도, 장소별 접기, 굴마다 일반/레어 출현표)
     DetailModal                        상세 틀 (헤더, 이로치, 이전/다음, 로딩/에러), GoTo 타입
     DetailBody                         상세 본문 섹션 순서
@@ -72,6 +74,7 @@ src/
 | 암수 모습 | `pokemon/{id}`의 `sprites.other.home.front_female`, 또는 `-female` 모습(냐오닉스 등) | 공식 일러스트에 암컷 그림이 없어서 둘 다 HOME 그림으로 맞춘다 |
 
 | 능력치 순위 | CSV `pokemon_stats.csv`(종족값, 리전폼 포함) + `pokemon_species.csv`(전설·환상, `evolves_from_species_id`) | 순위 화면을 열 때 1회. 리전폼에서만 진화하는 9종(창파나이트 등)은 `REGIONAL_EVOS`로 원래 모습을 최종 진화로 본다 |
+| 게임별 추천 | CSV `pokemon_dex_numbers.csv`(지방 도감별 종) + 능력치 순위의 표 | 게임 → 도감 id는 `STORY_GAMES`에 직접 적었다 (DLC 도감 제외). 리전폼은 그 게임 지방 것만 |
 | 소드·실드 맥스레이드 굴 | Serebii `swordshield/maxraidbattledens.shtml`과 굴 상세 197개를 2026-11-16에 한 번 정리한 `public/data/swsh-raids.json` | 레이드 화면을 열 때만 받는다. 모습 이름은 PokeAPI `pokemon_form_names.csv` 한국어, 없으면 영어 |
 | 소드·실드 장소 한국어 이름 | PKHeX `PKHeX.Core/Resources/text/locations/gen8/text_swsh_00000_{en,ko}.txt` (게임 속 장소 텍스트, 같은 줄끼리 짝) | `swsh-raids.json`의 `ko`. PokeAPI에는 한국어 장소 이름이 없다 |
 | 굴 번호·위치 | RaidFinder(github.com/Admiral-Fish/RaidFinder, GPL-3.0) `Core/Loader/DenLoader.cpp`의 `denInfo` | 게임 속 굴 순서(번호), 장소, 일반·레어 표 번호, 지도 좌표. 표 번호 짝이 Serebii 데이터와 44곳 모두 일치. 왕관설원 좌표는 0이라 아래 pkTeraRaid 것을 쓴다 |
@@ -88,7 +91,8 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 
 - `pokedex-index-v3`: `{ list: 종 1025개, forms: 리전폼 58개 }`
 - `pokedex-moves-v2`: 기술 데이터 (쓰기 전에 몸통박치기·화염방사·날개치기로 내용을 확인하고, 깨져 있으면 새로 받는다)
-- `pokedex-stats-v1`: 능력치 순위용 `id → { s: 종족값 6개, legend, final }` (종 1025 + 리전폼 58)
+- `pokedex-stats-v2`: 능력치 순위·게임별 추천용 `id → { s: 종족값 6개, legend, final, from: 진화 전 종 }` (종 1025 + 리전폼 58)
+- `pokedex-dexes-v1`: 게임별 추천용 `도감 id → 종 번호[]` (`STORY_GAMES`에 쓰는 도감만)
 - `pokedex-machines-v2`: `"게임:기술id" → "TM001"` (BDSP 빈칸은 다이아몬드·펄 번호로 채움)
 - Smogon 세트는 커서 메모리에만 둔다.
 
@@ -118,7 +122,17 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 - 같은 값이면 같은 순위(1, 2, 2, 4), 같은 값끼리는 합계 높은 순 → 도감 순. 30마리씩 "더 보기".
 - 검색(이름·번호, 도감과 같은 `entryMatcher`, 타입 이름을 그대로 치면 그 타입만): 보이는 줄만 줄이고 순위 번호는 그대로. 결과가 없는데 최종 진화만·전설 필터로 빠진 포켓몬이 있으면 이름과 "필터 끄고 보기" 버튼을 보여준다.
 - 줄마다 순위(1~3위는 금·은·동 `--rank-*`), 그림, 이름·번호·지방, 타입, 6능력치+합계(고른 기준 굵게), 고른 값과 1위 대비 막대.
-- 리전폼도 따로 순위에 들어가고 세대는 원래 포켓몬 기준. 메가진화 등 배틀 중 모습은 넣지 않는다.
+- 리전폼도 따로 순위에 들어가고 세대는 원래 포켓몬 기준. 메가진화 등 배틀 중 모습(`BATTLE_FORMS`: 가라르 불비달마 달마 모드)은 넣지 않는다.
+
+## 게임별 추천 화면 (StoryPage)
+
+- 헤더의 "게임별 추천" 버튼(`#story`). 게임(`STORY_GAMES`, 최신부터, 기본 스칼렛·바이올렛), 타입(모든 타입 / 하나), "전설·환상·울트라비스트 포함"(기본 꺼짐)을 고른다.
+- 그 게임 지방 도감에 있는 종 + 그 게임 지방의 리전폼(`region`). `hideBase`는 그 게임에 원래 모습이 없는 종(레전드 아르세우스의 히스이 모습들, 스칼렛·바이올렛의 켄타로스).
+- 그 게임 도감 안에서 더 진화하지 않는 모습만 (1세대의 골뱃처럼 그 게임 기준 최종). 리전폼에서만 진화하는 종은 `REGIONAL_EVOS`로 판단.
+- 스토리 점수 = 공격·특공 중 높은 쪽 ×2 + 스피드 + (HP+방어+특방)/3. `STORY_CAUTION`(게을킹·아케오스·껍질몬)은 ×0.6으로 내리고 이유를 빨간 글로 표시.
+- 타입 순서(`TYPES`)대로 타입마다 상위 5마리 카드(같은 포켓몬이 두 타입에 나올 수 있다), "OO 타입 더 보기"는 그 타입만 20마리씩.
+- 카드: 순위, 그림, 이름·지방, 타입, "키우기: 첫 모습 → … → 최종"(그 게임 도감에 없는 진화 전은 뺌, 리전폼 진화는 같은 지방 모습), 높은 공격 능력치·스피드, 나머지 능력치·합계.
+- 타입은 최신 세대 기준이다 (1세대 게임에도 페어리 타입이 나온다).
 
 ## 소드·실드 맥스레이드 화면 (RaidPage)
 
@@ -184,6 +198,7 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 - 데인차·포트데스의 진작 모습은 한국어 데이터가 없어서 "Antique"로 나온다.
 - 레이드 지도 영역 경계는 굴 위치로 만든 근사다. 왕관설원의 얼어붙은 바다·세갈래 들판은 지도 폭을 줄이려고 실제보다 서쪽(오른쪽 위 빈 곳)에 그렸다.
 - 와일드에리어 17번 굴(감시탑 유적지, RaidFinder에서 Special)은 출현표가 없어서 빠져 있다.
+- 게임별 추천은 지방 도감에 있는지만 본다. 버전 한정·스토리 중 언제 잡을 수 있는지·통신교환 진화는 반영하지 않는다.
 
 ## 작업 기록
 
@@ -220,5 +235,6 @@ PokeAPI GraphQL(beta)은 401로 막혀 있어서 쓰지 않는다.
 | 29 | 왕관설원도 굴 좌표(pkTeraRaid)로 지도를 다시 그림, 먼 동쪽 바다는 점선 상자로 당겨 표시 |
 | 30 | 추천 성격 1~3순위 섹션 (종족값 아래): Smogon 세트 사용 횟수 + 종족값 자동 추천, 이유 설명 |
 | 31 | 능력치 순위 카테고리 (`#stats`): 세대·능력치별 종족값 순위, 최종 진화만·전설 포함 필터, 검색(이름·번호·타입), 상세에서 이전/다음이 순위 순서 |
+| 32 | 게임별 추천 카테고리 (`#story`): 게임 지방 도감 기준 타입별 추천, 스토리 점수, 키우는 진화 단계, 특성 주의 표시. 가라르 불비달마 달마 모드를 순위에서 제외 |
 
 새 작업을 하면 위 표에 한 줄 추가하고, 구조·규칙·한계가 바뀌면 해당 절도 고친다.

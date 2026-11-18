@@ -51,6 +51,21 @@ export interface StatRow {
   legend: boolean;
   /** 최종 진화 (진화하지 않는 포켓몬 포함) */
   final: boolean;
+  /** 진화 전 종의 도감 번호 (없으면 0, 리전폼은 원래 종 기준) */
+  from: number;
+}
+
+/** pokedexes.csv id → 그 지방 도감에 있는 종 번호 */
+export type DexTable = Record<number, number[]>;
+
+export interface StoryPick {
+  entry: ListEntry;
+  stats: number[];
+  total: number;
+  /** 스토리 점수 (높은 공격 능력치 ×2 + 스피드 + 내구 능력치 평균) */
+  score: number;
+  /** 그 게임에서 잡아서 키우는 진화 단계 (첫 모습 → … → 이 포켓몬) */
+  line: number[];
 }
 
 /** 목록 id(도감 번호, 리전폼은 10000번대) → 능력치 */

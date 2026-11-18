@@ -1,4 +1,4 @@
-import { GENS, REGIONAL_EVOS, SPECIES_CSV, STATS_CACHE_KEY, STATS_CSV, TOTAL } from '../lib/constants';
+import { BATTLE_FORMS, GENS, REGIONAL_EVOS, SPECIES_CSV, STATS_CACHE_KEY, STATS_CSV, TOTAL } from '../lib/constants';
 import { store } from '../lib/store';
 import { getText, parseCSV, readCache, writeCache } from '../lib/utils';
 import type { ListEntry, RankRow, StatTable } from '../types';
@@ -13,22 +13,25 @@ async function fetchStatTable(): Promise<StatTable> {
   }
 
   // 진화하는 포켓몬이 있으면 최종 진화가 아니다. 리전폼에서만 진화하는 경우(REGIONAL_EVOS)는 원래 모습을 최종으로 본다
-  const legend = new Set<number>(), parents = new Set<number>();
+  const legend = new Set<number>(), parents = new Set<number>(), fromOf: Record<number, number> = {};
   for (const [id, , , from, , , , , , , , , , , , , isLegend, isMythical] of parseCSV(speciesCsv).slice(1)) {
     if (isLegend === '1' || isMythical === '1') legend.add(Number(id));
+    if (from) fromOf[Number(id)] = Number(from);
     if (from && !REGIONAL_EVOS[Number(id)]) parents.add(Number(from));
   }
   const evolvingForms = new Set(Object.values(REGIONAL_EVOS));
 
   const table: StatTable = {};
   for (const p of store.list) {
-    if (stats[p.id]?.length === 6) table[p.id] = { s: stats[p.id], legend: legend.has(p.id), final: !parents.has(p.id) };
+    if (stats[p.id]?.length === 6) table[p.id] = { s: stats[p.id], legend: legend.has(p.id), final: !parents.has(p.id), from: fromOf[p.id] ?? 0 };
   }
   for (const f of store.forms) {
     if (stats[f.id]?.length !== 6) continue;
-    table[f.id] = { s: stats[f.id], legend: legend.has(f.base), final: !parents.has(f.base) && !evolvingForms.has(f.name) };
+    table[f.id] = {
+      s: stats[f.id], legend: legend.has(f.base), final: !parents.has(f.base) && !evolvingForms.has(f.name), from: fromOf[f.base] ?? 0,
+    };
   }
-  writeCache(STATS_CACHE_KEY, table);
+  writeCache(STATS_CACHE_KEY, table, ['pokedex-stats-v1']);
   return table;
 }
 
@@ -54,7 +57,7 @@ export interface RankFilter {
 // 고른 기준이 높은 순. 같으면 합계가 높은 순, 그다음 도감 순
 export function rankEntries(table: StatTable, { gen, stat, finalOnly, legends }: RankFilter): RankRow[] {
   const [from, to] = gen ? GENS[gen - 1] : [1, TOTAL];
-  const entries: ListEntry[] = [...store.list.map((p) => ({ ...p, base: p.id })), ...store.forms];
+  const entries: ListEntry[] = [...store.list.map((p) => ({ ...p, base: p.id })), ...store.forms.filter((f) => !BATTLE_FORMS.has(f.name))];
   const rows = entries.flatMap((entry): Omit<RankRow, 'rank'>[] => {
     const row = table[entry.id];
     if (!row || entry.base < from || entry.base > to) return [];

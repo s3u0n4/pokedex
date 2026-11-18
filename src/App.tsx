@@ -6,6 +6,7 @@ import Header, { type View } from './components/Header';
 import PokemonGrid from './components/PokemonGrid';
 import RaidPage from './components/RaidPage';
 import StatsPage from './components/StatsPage';
+import StoryPage from './components/StoryPage';
 import { Status } from './components/ui';
 import { GENS, TOTAL } from './lib/constants';
 import { entryOf } from './lib/store';
@@ -13,8 +14,8 @@ import { entryMatcher } from './lib/utils';
 import type { ListEntry, PokedexIndex } from './types';
 
 // 주소 끝의 #25 같은 해시가 상세 화면을 연다 (리전폼은 #10100 같은 PokeAPI id).
-// 레이드 화면은 #raid, 거기서 연 상세는 #raid/25 (능력치 순위도 #stats, #stats/25)
-const PAGES: View[] = ['raid', 'stats'];
+// 레이드 화면은 #raid, 거기서 연 상세는 #raid/25 (능력치 순위 #stats, 게임별 추천 #story도 같은 방식)
+const PAGES: View[] = ['raid', 'stats', 'story'];
 
 function parseHash(): { view: View; id: number | null } {
   const [head, tail] = location.hash.slice(1).split('/');
@@ -37,8 +38,8 @@ export default function App() {
   const [type, setType] = useState<string | null>(null);
   const [current, setCurrent] = useState<number | null>(null);
   const [view, setView] = useState<View>(() => parseHash().view);
-  /** 능력치 순위 화면에서 보이는 순서 (상세 화면의 이전/다음에 쓴다) */
-  const [rankOrder, setRankOrder] = useState<number[] | null>(null);
+  /** 능력치 순위·게임별 추천 화면에서 보이는 순서 (상세 화면의 이전/다음에 쓴다) */
+  const [pageOrder, setPageOrder] = useState<number[] | null>(null);
 
   const currentRef = useRef<number | null>(null);
   const viewRef = useRef<View>(view);
@@ -92,14 +93,14 @@ export default function App() {
     });
   }, [entries, query, gen, type]);
 
-  // 상세 화면의 이전/다음: 목록(능력치 순위 화면에서는 순위)에 보이는 순서를 따르고, 거기 없는 포켓몬이면 전체 목록 순
+  // 상세 화면의 이전/다음: 목록(능력치 순위·게임별 추천 화면에서는 그 화면)에 보이는 순서를 따르고, 거기 없는 포켓몬이면 전체 목록 순
   const { prevId, nextId } = useMemo(() => {
     if (!current) return { prevId: null, nextId: null };
-    const visible = view === 'stats' && rankOrder ? rankOrder : filtered.map((p) => p.id);
+    const visible = view !== 'dex' && pageOrder ? pageOrder : filtered.map((p) => p.id);
     const order = visible.includes(current) ? visible : entries.map((p) => p.id);
     const i = order.indexOf(current);
     return { prevId: order[i - 1] ?? null, nextId: order[i + 1] ?? null };
-  }, [current, filtered, entries, view, rankOrder]);
+  }, [current, filtered, entries, view, pageOrder]);
 
   const open = useCallback((id: number) => {
     pushedRef.current = true;
@@ -180,7 +181,8 @@ export default function App() {
         </>
       ) : !index ? <main className="wrap">{indexStatus}</main>
         : view === 'raid' ? <RaidPage onOpen={open} searchRef={searchRef} />
-          : <StatsPage onOpen={open} onOrder={setRankOrder} searchRef={searchRef} />}
+          : view === 'stats' ? <StatsPage onOpen={open} onOrder={setPageOrder} searchRef={searchRef} />
+            : <StoryPage onOpen={open} onOrder={setPageOrder} />}
 
       <footer className="wrap">
         데이터 출처: <a href="https://pokeapi.co" target="_blank" rel="noopener noreferrer">PokeAPI</a>

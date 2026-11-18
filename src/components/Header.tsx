@@ -1,12 +1,13 @@
 import { Pokeball } from './ui';
 
-export type View = 'dex' | 'raid' | 'stats';
+export type View = 'dex' | 'raid' | 'stats' | 'story';
 
-const VIEWS: [View, string][] = [['dex', '전국도감'], ['stats', '능력치 순위'], ['raid', '소드·실드 맥스레이드']];
+const VIEWS: [View, string][] = [['dex', '전국도감'], ['stats', '능력치 순위'], ['story', '게임별 추천'], ['raid', '소드·실드 맥스레이드']];
 const SUBTITLE: Record<View, string> = {
   dex: '전국도감 1세대부터 9세대까지 1025마리',
   raid: '소드·실드 맥스레이드배틀 굴마다 나오는 포켓몬',
   stats: '세대별·능력치별 종족값이 높은 포켓몬',
+  story: '게임 스토리에서 키우기 좋은 포켓몬을 타입별로',
 };
 
 export default function Header({ view, onView }: { view: View; onView: (v: View) => void }) {

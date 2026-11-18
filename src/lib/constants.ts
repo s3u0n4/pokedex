@@ -10,6 +10,7 @@ export const MACHINES_CSV = `${CSV_BASE}/machines.csv`;
 export const ITEMS_CSV = `${CSV_BASE}/items.csv`;
 export const STATS_CSV = `${CSV_BASE}/pokemon_stats.csv`;
 export const SPECIES_CSV = `${CSV_BASE}/pokemon_species.csv`;
+export const DEX_NUMBERS_CSV = `${CSV_BASE}/pokemon_dex_numbers.csv`;
 export const ART_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork';
 // Smogon(포켓몬 대전 커뮤니티)이 정리한 9세대 대전용 추천 세트
 export const SETS_URL = 'https://data.pkmn.cc/sets/gen9.json';
@@ -17,7 +18,8 @@ export const SETS_URL = 'https://data.pkmn.cc/sets/gen9.json';
 export const CACHE_KEY = 'pokedex-index-v3';
 export const MOVE_CACHE_KEY = 'pokedex-moves-v2';
 export const MACHINE_CACHE_KEY = 'pokedex-machines-v2';
-export const STATS_CACHE_KEY = 'pokedex-stats-v1';
+export const STATS_CACHE_KEY = 'pokedex-stats-v2';
+export const DEX_CACHE_KEY = 'pokedex-dexes-v1';
 export const LANG_KO = '3';
 export const LANG_EN = '9';
 
@@ -28,6 +30,50 @@ export const REGIONAL_EVOS: Record<number, string> = {
   862: 'linoone-galar', 863: 'meowth-galar', 864: 'corsola-galar', 865: 'farfetchd-galar', 866: 'mr-mime-galar',
   867: 'yamask-galar', 903: 'sneasel-hisui', 904: 'qwilfish-hisui', 980: 'wooper-paldea',
 };
+
+// 배틀 중에만 되는 모습 (순위·추천에서 뺀다)
+export const BATTLE_FORMS = new Set(['darmanitan-galar-zen']);
+// 울트라비스트: 전설은 아니지만 스토리가 끝난 뒤에 잡을 수 있어서 게임별 추천에서는 전설과 같이 다룬다
+export const ULTRA_BEASTS = new Set([793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806]);
+// 종족값은 높지만 특성 때문에 스토리에서 쓰기 어려운 포켓몬 (게임별 추천에서 점수를 낮추고 이유를 보여준다)
+export const STORY_CAUTION: Record<number, string> = {
+  289: '특성 게으름 때문에 두 턴에 한 번만 공격할 수 있어요',
+  567: '특성 무기력 때문에 HP가 절반 이하가 되면 공격·특공이 반으로 줄어요',
+  292: '특성 불가사의부적 때문에 HP가 1이라 효과가 굉장한 기술에 바로 쓰러져요',
+};
+
+export interface StoryGame {
+  key: string;
+  ko: string;
+  /** 스토리에서 쓰는 지방 도감 (pokedexes.csv id, DLC 도감은 넣지 않는다) */
+  dexes: number[];
+  /** 이 게임에 나오는 리전폼의 지방 */
+  region?: Region;
+  /** 이 게임에서는 리전폼만 나오고 원래 모습은 안 나오는 종 */
+  hideBase?: number[];
+}
+// 게임별 추천에서 고르는 게임 (도감이 같은 게임은 한 줄로, 최신 게임부터)
+export const STORY_GAMES: StoryGame[] = [
+  { key: 'za', ko: '레전드 Z-A', dexes: [34] },
+  { key: 'sv', ko: '스칼렛·바이올렛', dexes: [31], region: 'paldea', hideBase: [128] },
+  { key: 'pla', ko: '레전드 아르세우스', dexes: [30], region: 'hisui', hideBase: [58, 59, 100, 101, 157, 211, 503, 549, 570, 571, 628, 705, 706, 713, 724] },
+  { key: 'bdsp', ko: '브릴리언트다이아몬드·샤이닝펄', dexes: [5] },
+  { key: 'swsh', ko: '소드·실드', dexes: [27], region: 'galar' },
+  { key: 'lgpe', ko: '레츠고 피카츄·이브이', dexes: [26], region: 'alola' },
+  { key: 'usum', ko: '울트라썬·울트라문', dexes: [21], region: 'alola' },
+  { key: 'sm', ko: '썬·문', dexes: [16], region: 'alola' },
+  { key: 'oras', ko: '오메가루비·알파사파이어', dexes: [15] },
+  { key: 'xy', ko: 'X·Y', dexes: [12, 13, 14] },
+  { key: 'b2w2', ko: '블랙2·화이트2', dexes: [9] },
+  { key: 'bw', ko: '블랙·화이트', dexes: [8] },
+  { key: 'hgss', ko: '하트골드·소울실버', dexes: [7] },
+  { key: 'pt', ko: '기라티나', dexes: [6] },
+  { key: 'dp', ko: '디아루가·펄기아', dexes: [5] },
+  { key: 'frlg', ko: '파이어레드·리프그린', dexes: [2] },
+  { key: 'rse', ko: '루비·사파이어·에메랄드', dexes: [4] },
+  { key: 'gsc', ko: '골드·실버·크리스탈', dexes: [3] },
+  { key: 'rby', ko: '레드·그린·블루·피카츄', dexes: [2] },
+];
 
 export const GENS: [number, number][] = [[1, 151], [152, 251], [252, 386], [387, 493], [494, 649], [650, 721], [722, 809], [810, 905], [906, 1025]];
 

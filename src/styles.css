@@ -735,3 +735,31 @@ table.moves { width: 100%; border-collapse: collapse; font-size: 14px; white-spa
   .rank-value b { font-size: 20px; }
   .rank-value .bar { height: 6px; }
 }
+
+/* 게임별 추천 */
+.story { padding-top: 6px; }
+.chip.small-toggle { padding: 3px 12px; font-size: 13px; }
+.story-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; align-items: start; }
+.story-one { max-width: 760px; }
+.story-type { padding: 12px; border: 2px solid var(--line); border-top: 5px solid var(--tc); border-radius: 18px; }
+.story-type h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 15px; }
+.story-type h3 .type { font-size: 14px; }
+.story-type h3 small { color: var(--muted); font-size: 12px; font-weight: 500; }
+.story-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.story-card {
+  display: grid; grid-template-columns: 24px 56px 1fr; align-items: center; gap: 8px; width: 100%;
+  padding: 6px 10px 6px 6px; border: 0; border-radius: 14px; background: var(--surface-2);
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.story-card:hover { outline: 2px solid var(--line); }
+.story-rank { justify-self: center; font-family: 'Jua', sans-serif; font-size: 16px; color: var(--muted); }
+.story-card img { width: 56px; height: 56px; object-fit: contain; }
+.story-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.story-main .types { justify-content: flex-start; margin-top: 0; }
+.story-line { color: var(--learn-level); font-size: 12px; font-weight: 700; }
+.story-caution { color: var(--red); font-size: 12px; font-weight: 700; }
+.story-more { display: block; margin: 8px auto 0; }
+@media (max-width: 520px) {
+  .story-types { grid-template-columns: 1fr; }
+  .story-type { margin: 0 -6px; padding: 10px 8px; }
+}
