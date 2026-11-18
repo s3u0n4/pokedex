@@ -1,4 +1,4 @@
-import type { FlavorEntry, GimmickKind, Region } from '../types';
+import type { FlavorEntry, GimmickKind, ListEntry, Region } from '../types';
 import {
   ART_BASE, FORMAT_KO, FORMAT_ORDER, NATURES, NATURES_KO, NATURE_STATS, TYPES, TYPE_CHART,
 } from './constants';
@@ -82,6 +82,14 @@ export function genderText(rate: number) {
   if (rate < 0) return ['무성'];
   const female = rate * 12.5;
   return [`♂ ${100 - female}%`, `♀ ${female}%`];
+}
+
+// 검색어(이름 한국어·영어 일부, 번호 "25"·"#25"·"No.25") → 맞는 포켓몬인지. 검색어가 비면 null
+export function entryMatcher(query: string): ((p: ListEntry) => boolean) | null {
+  const q = query.trim().toLowerCase().replace(/^(#|no\.?)\s*/, '');
+  if (!q) return null;
+  const num = /^\d+$/.test(q) ? Number(q) : null;
+  return (p) => (num !== null ? p.base === num : p.ko.includes(q) || p.en.toLowerCase().includes(q));
 }
 
 export function natureText(name: string) {

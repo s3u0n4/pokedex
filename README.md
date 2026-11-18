@@ -4,7 +4,7 @@
 
 **배포 주소: https://sun-pokedex.vercel.app**
 
-헤더에서 **전국도감**과 **소드·실드 맥스레이드**(`#raid`) 화면을 고를 수 있습니다. 주소 끝에 `#번호`를 붙이면 그 포켓몬의 상세 화면이 바로 열립니다. 리전폼은 PokeAPI의 포켓몬 번호(10000번대)를 씁니다. 예: [`#25` 피카츄](https://sun-pokedex.vercel.app/#25), [`#10100` 알로라 라이츄](https://sun-pokedex.vercel.app/#10100)
+헤더에서 **전국도감**, **능력치 순위**(`#stats`), **소드·실드 맥스레이드**(`#raid`) 화면을 고를 수 있습니다. 주소 끝에 `#번호`를 붙이면 그 포켓몬의 상세 화면이 바로 열립니다. 리전폼은 PokeAPI의 포켓몬 번호(10000번대)를 씁니다. 예: [`#25` 피카츄](https://sun-pokedex.vercel.app/#25), [`#10100` 알로라 라이츄](https://sun-pokedex.vercel.app/#10100)
 
 ## 기술
 
@@ -15,7 +15,7 @@
 | 배포 | Vercel |
 | 데이터 | [PokeAPI](https://pokeapi.co) (REST API, GitHub CSV, 일러스트·도구 그림), [Smogon 세트](https://data.pkmn.cc) |
 | 레이드 데이터 | [Serebii](https://www.serebii.net/swordshield/maxraidbattledens.shtml) 굴 출현표, [PKHeX](https://github.com/kwsch/PKHeX) 한국어 장소 이름, [RaidFinder](https://github.com/Admiral-Fish/RaidFinder)·[pkTeraRaid](https://github.com/Insektaure/pkTeraRaid) 굴 번호·좌표 (`public/data/swsh-raids.json`으로 정리) |
-| 저장 | localStorage 캐시 (목록·기술 데이터) |
+| 저장 | localStorage 캐시 (목록·기술·능력치 데이터) |
 | 폰트 | Jua, Noto Sans KR (Google Fonts) |
 
 서버(백엔드)는 없습니다. 데이터는 모두 브라우저에서 PokeAPI 등에서 직접 받습니다.
@@ -47,6 +47,12 @@
     - 대전용: Smogon 세트에서 많이 쓰는 도구 3개. 세트가 없으면 능력치에 맞춰 진화의휘석, 돌격조끼, 생명의구슬, 기합의띠, 구애 시리즈 중에서 고릅니다.
 - **기술 목록**: 게임별로 레벨업, 기술머신(TM/HM/TR 번호), 알 기술, 기술 가르침
 
+### 능력치 순위
+- 세대(전체·1~9세대)와 능력치(합계, HP, 공격, 방어, 특공, 특방, 스피드)를 고르면 종족값이 높은 순서로 순위를 보여줍니다.
+- 이름·번호로 검색하면 그 포켓몬이 몇 위인지 바로 보이고, 타입 이름(예: 드래곤)을 치면 그 타입끼리의 순위를 볼 수 있습니다.
+- "최종 진화만", "전설·환상 포함"으로 거를 수 있습니다. 리전폼도 따로 순위에 들어가고, 메가진화 같은 배틀 중 모습은 넣지 않습니다.
+- 줄마다 6가지 능력치와 합계를 같이 보여주고, 누르면 상세 화면이 열립니다. 상세 화면의 이전/다음은 순위 순서를 따릅니다.
+
 ### 소드·실드 맥스레이드
 - 와일드에리어·갑옷섬·왕관설원의 맥스레이드배틀 굴마다 일반(빨간 빛)·레어(보라 빛) 출현 포켓몬을 보여줍니다. 별 단계별 확률, 거다이맥스, 숨겨진 특성 가능 여부도 표시합니다.
 - 소드/실드 버전, 별 단계(★1~5), 거다이맥스만 보기로 거를 수 있고, 포켓몬 이름·번호나 장소 이름으로 찾을 수 있습니다.
@@ -70,11 +76,11 @@ npm run preview    # 빌드 결과 확인
 
 ```
 src/
-  App.tsx          카테고리, 검색·필터 상태, 주소(#번호, #raid) 라우팅, 키보드
+  App.tsx          카테고리, 검색·필터 상태, 주소(#번호, #stats, #raid) 라우팅, 키보드
   types.ts         앱 데이터 타입과 PokeAPI·Smogon 응답 타입
   lib/             상수, 유틸리티, 공용 데이터 저장소
-  api/             목록, 상세, 기술, 추천 성격, 한국어 이름 데이터 로딩
-  components/      목록 화면, 상세 화면 섹션, 레이드 화면·지도
+  api/             목록, 상세, 기술, 추천 성격, 능력치 순위, 한국어 이름 데이터 로딩
+  components/      목록 화면, 상세 화면 섹션, 능력치 순위 화면, 레이드 화면·지도
 public/data/       소드·실드 레이드 굴 데이터
 legacy/index.html  React로 옮기기 전의 단일 HTML 버전
 ```

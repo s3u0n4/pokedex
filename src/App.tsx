@@ -5,23 +5,27 @@ import DetailModal, { type GoTo } from './components/DetailModal';
 import Header, { type View } from './components/Header';
 import PokemonGrid from './components/PokemonGrid';
 import RaidPage from './components/RaidPage';
+import StatsPage from './components/StatsPage';
 import { Status } from './components/ui';
 import { GENS, TOTAL } from './lib/constants';
 import { entryOf } from './lib/store';
+import { entryMatcher } from './lib/utils';
 import type { ListEntry, PokedexIndex } from './types';
 
 // 주소 끝의 #25 같은 해시가 상세 화면을 연다 (리전폼은 #10100 같은 PokeAPI id).
-// 레이드 화면은 #raid, 거기서 연 상세는 #raid/25
+// 레이드 화면은 #raid, 거기서 연 상세는 #raid/25 (능력치 순위도 #stats, #stats/25)
+const PAGES: View[] = ['raid', 'stats'];
+
 function parseHash(): { view: View; id: number | null } {
   const [head, tail] = location.hash.slice(1).split('/');
-  const view: View = head === 'raid' ? 'raid' : 'dex';
-  const raw = view === 'raid' ? tail : head;
+  const view: View = PAGES.find((v) => v === head) ?? 'dex';
+  const raw = view === 'dex' ? head : tail;
   const id = Number(raw);
   return { view, id: raw && Number.isInteger(id) && id >= 1 && entryOf(id) ? id : null };
 }
 
 const hashFor = (view: View, id: number | null) => {
-  if (view === 'raid') return id ? `#raid/${id}` : '#raid';
+  if (view !== 'dex') return id ? `#${view}/${id}` : `#${view}`;
   return id ? `#${id}` : '';
 };
 
@@ -33,6 +37,8 @@ export default function App() {
   const [type, setType] = useState<string | null>(null);
   const [current, setCurrent] = useState<number | null>(null);
   const [view, setView] = useState<View>(() => parseHash().view);
+  /** 능력치 순위 화면에서 보이는 순서 (상세 화면의 이전/다음에 쓴다) */
+  const [rankOrder, setRankOrder] = useState<number[] | null>(null);
 
   const currentRef = useRef<number | null>(null);
   const viewRef = useRef<View>(view);
@@ -77,25 +83,23 @@ export default function App() {
   }, [index]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase().replace(/^(#|no\.?)\s*/, '');
-    const num = /^\d+$/.test(q) ? Number(q) : null;
+    const match = entryMatcher(query);
     const [from, to] = gen ? GENS[gen - 1] : [1, TOTAL];
     return entries.filter((p) => {
       if (p.base < from || p.base > to) return false;
       if (type && !p.types.includes(type)) return false;
-      if (!q) return true;
-      return num !== null ? p.base === num : p.ko.includes(q) || p.en.toLowerCase().includes(q);
+      return !match || match(p);
     });
   }, [entries, query, gen, type]);
 
-  // 상세 화면의 이전/다음: 목록에 보이는 순서를 따르고, 목록에 없는 포켓몬이면 전체 목록 순
+  // 상세 화면의 이전/다음: 목록(능력치 순위 화면에서는 순위)에 보이는 순서를 따르고, 거기 없는 포켓몬이면 전체 목록 순
   const { prevId, nextId } = useMemo(() => {
     if (!current) return { prevId: null, nextId: null };
-    const visible = filtered.map((p) => p.id);
+    const visible = view === 'stats' && rankOrder ? rankOrder : filtered.map((p) => p.id);
     const order = visible.includes(current) ? visible : entries.map((p) => p.id);
     const i = order.indexOf(current);
     return { prevId: order[i - 1] ?? null, nextId: order[i + 1] ?? null };
-  }, [current, filtered, entries]);
+  }, [current, filtered, entries, view, rankOrder]);
 
   const open = useCallback((id: number) => {
     pushedRef.current = true;
@@ -121,7 +125,7 @@ export default function App() {
   // 카테고리를 바꾸면 방문 기록이 하나 쌓인다 (뒤로 가기로 돌아올 수 있게)
   const changeView = (v: View) => {
     if (v === view) return;
-    if (v === 'raid') location.hash = 'raid';
+    if (v !== 'dex') location.hash = v;
     else history.pushState(null, '', location.pathname + location.search);
     pushedRef.current = false;
     setView(v);
@@ -174,7 +178,9 @@ export default function App() {
             {indexStatus}
           </main>
         </>
-      ) : index ? <RaidPage onOpen={open} searchRef={searchRef} /> : <main className="wrap">{indexStatus}</main>}
+      ) : !index ? <main className="wrap">{indexStatus}</main>
+        : view === 'raid' ? <RaidPage onOpen={open} searchRef={searchRef} />
+          : <StatsPage onOpen={open} onOrder={setRankOrder} searchRef={searchRef} />}
 
       <footer className="wrap">
         데이터 출처: <a href="https://pokeapi.co" target="_blank" rel="noopener noreferrer">PokeAPI</a>

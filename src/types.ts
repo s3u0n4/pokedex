@@ -44,6 +44,28 @@ export interface DexEntry extends ListEntry {
   name?: string;
 }
 
+/** 능력치 순위용: 종족값 6개(HP, 공격, 방어, 특공, 특방, 스피드 순)와 거르기용 정보 */
+export interface StatRow {
+  s: number[];
+  /** 전설·환상 */
+  legend: boolean;
+  /** 최종 진화 (진화하지 않는 포켓몬 포함) */
+  final: boolean;
+}
+
+/** 목록 id(도감 번호, 리전폼은 10000번대) → 능력치 */
+export type StatTable = Record<number, StatRow>;
+
+export interface RankRow {
+  entry: ListEntry;
+  stats: number[];
+  total: number;
+  /** 고른 기준의 값 */
+  value: number;
+  /** 같은 값이면 같은 순위 (1, 2, 2, 4 …) */
+  rank: number;
+}
+
 export interface Stat {
   key: string;
   value: number;

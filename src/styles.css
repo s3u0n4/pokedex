@@ -18,6 +18,9 @@
   --shield: #c2185b;
   --nature-up: #e03131;
   --nature-down: #1d5fbf;
+  --rank-1: #d4a017;
+  --rank-2: #9aa3ad;
+  --rank-3: #c27c3e;
   --raid-common: #e03131;
   --raid-rare: #7048e8;
   --gmax: #c92a2a;
@@ -698,3 +701,37 @@ table.moves { width: 100%; border-collapse: collapse; font-size: 14px; white-spa
 .raid-den-name { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .raid-den-name .link-btn { padding: 0; font-size: 13px; }
 .raid-selected { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 15px; }
+
+/* 능력치 순위 */
+.ranking { padding-top: 6px; }
+.rank-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rank-row {
+  display: grid; grid-template-columns: 40px 64px 1fr 150px; align-items: center; gap: 12px; width: 100%;
+  padding: 8px 16px 8px 10px; border: 2px solid var(--line); border-radius: 16px; background: var(--surface);
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.rank-row:hover { border-color: var(--muted); }
+.rank-no { display: grid; place-items: center; justify-self: center; min-width: 34px; height: 34px; padding: 0 4px; border-radius: 999px; background: var(--surface-2); font-family: 'Jua', sans-serif; font-size: 17px; font-variant-numeric: tabular-nums; }
+.rank-row.top1 .rank-no { background: var(--rank-1); color: #fff; }
+.rank-row.top2 .rank-no { background: var(--rank-2); color: #fff; }
+.rank-row.top3 .rank-no { background: var(--rank-3); color: #fff; }
+.rank-row img { width: 64px; height: 64px; object-fit: contain; }
+.rank-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rank-name { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+.rank-name b { font-size: 16px; }
+.rank-name small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rank-main .types { justify-content: flex-start; margin-top: 0; }
+.rank-stats { display: flex; flex-wrap: wrap; gap: 2px 10px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rank-stats span { white-space: nowrap; }
+.rank-stats .on { color: var(--text); font-weight: 700; }
+.rank-value { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.rank-value b { font-family: 'Jua', sans-serif; font-size: 24px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.rank-value .bar { width: 100%; }
+.rank-more { display: block; margin: 16px auto 0; }
+@media (max-width: 600px) {
+  .rank-row { grid-template-columns: 36px 48px 1fr 56px; gap: 8px; padding: 8px 10px 8px 8px; }
+  .rank-no { min-width: 28px; height: 28px; padding: 0 3px; font-size: 13px; }
+  .rank-row img { width: 48px; height: 48px; }
+  .rank-value b { font-size: 20px; }
+  .rank-value .bar { height: 6px; }
+}

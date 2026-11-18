@@ -8,6 +8,8 @@ export const MOVES_CSV = `${CSV_BASE}/moves.csv`;
 export const MOVE_NAMES_CSV = `${CSV_BASE}/move_names.csv`;
 export const MACHINES_CSV = `${CSV_BASE}/machines.csv`;
 export const ITEMS_CSV = `${CSV_BASE}/items.csv`;
+export const STATS_CSV = `${CSV_BASE}/pokemon_stats.csv`;
+export const SPECIES_CSV = `${CSV_BASE}/pokemon_species.csv`;
 export const ART_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork';
 // Smogon(포켓몬 대전 커뮤니티)이 정리한 9세대 대전용 추천 세트
 export const SETS_URL = 'https://data.pkmn.cc/sets/gen9.json';
@@ -15,8 +17,17 @@ export const SETS_URL = 'https://data.pkmn.cc/sets/gen9.json';
 export const CACHE_KEY = 'pokedex-index-v3';
 export const MOVE_CACHE_KEY = 'pokedex-moves-v2';
 export const MACHINE_CACHE_KEY = 'pokedex-machines-v2';
+export const STATS_CACHE_KEY = 'pokedex-stats-v1';
 export const LANG_KO = '3';
 export const LANG_EN = '9';
+
+// 능력치 순위에서 고를 수 있는 기준 (stat은 pokemon_stats.csv의 stat_id - 1, 합계는 -1)
+export const RANK_STATS: [stat: number, label: string][] = [[-1, '합계'], [0, 'HP'], [1, '공격'], [2, '방어'], [3, '특공'], [4, '특방'], [5, '스피드']];
+// 리전폼에서만 진화하는 포켓몬 → 그 리전폼 (원래 모습은 최종 진화로 본다. 예: 파오리는 최종, 가라르 파오리는 창파나이트로 진화)
+export const REGIONAL_EVOS: Record<number, string> = {
+  862: 'linoone-galar', 863: 'meowth-galar', 864: 'corsola-galar', 865: 'farfetchd-galar', 866: 'mr-mime-galar',
+  867: 'yamask-galar', 903: 'sneasel-hisui', 904: 'qwilfish-hisui', 980: 'wooper-paldea',
+};
 
 export const GENS: [number, number][] = [[1, 151], [152, 251], [252, 386], [387, 493], [494, 649], [650, 721], [722, 809], [810, 905], [906, 1025]];
 
